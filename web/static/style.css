@@ -1,0 +1,205 @@
+/* -- Reset & base ------------------------------------------------ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0f1117;
+  --surface:   #1c1f2b;
+  --border:    #2e3347;
+  --accent:    #4a9eff;
+  --danger:    #ff4f4f;
+  --text:      #e2e8f0;
+  --muted:     #7a859e;
+  --btn-size:  72px;
+  --gap:       8px;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -- Header ------------------------------------------------------ */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+header h1 { font-size: 1.1rem; letter-spacing: 0.05em; }
+
+.status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.status.connected    { background: #1a3a1a; color: #4caf50; }
+.status.disconnected { background: #3a1a1a; color: #f44336; }
+
+/* -- Main layout ------------------------------------------------- */
+main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  flex: 1;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.panel h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.panel-camera { flex: 1 1 340px; }
+.panel-drive  { flex: 1 1 260px; align-items: center; }
+
+/* -- Camera feed ------------------------------------------------- */
+.camera-frame {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 4/3;
+}
+
+.camera-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* -- Distance ---------------------------------------------------- */
+.distance-box {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.distance-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.distance-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+/* -- Servo sliders ----------------------------------------------- */
+.servo-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.servo-controls label {
+  display: grid;
+  grid-template-columns: 3rem 1fr 3rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+}
+
+.servo-controls span {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  text-align: right;
+  font-size: 0.8rem;
+}
+
+/* -- D-Pad ------------------------------------------------------- */
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, var(--btn-size));
+  grid-template-rows:    repeat(3, var(--btn-size));
+  gap: var(--gap);
+  user-select: none;
+}
+
+.dpad-btn {
+  width:  var(--btn-size);
+  height: var(--btn-size);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1.6rem;
+  cursor: pointer;
+  transition: background 80ms, transform 80ms;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+.dpad-btn:hover  { background: #252a3a; }
+.dpad-btn:active,
+.dpad-btn.pressed { background: var(--accent); color: #fff; transform: scale(0.93); }
+
+.dpad-stop        { background: #2a1a1a; color: var(--danger); font-size: 1.3rem; }
+.dpad-stop:hover  { background: #3a2020; }
+.dpad-stop.pressed{ background: var(--danger); color: #fff; }
+
+.hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* -- Responsive -------------------------------------------------- */
+@media (max-width: 520px) {
+  :root { --btn-size: 60px; }
+}

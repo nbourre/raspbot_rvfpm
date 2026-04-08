@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Raspbot RVFPM Controller</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Raspbot RVFPM</h1>
+    <span id="ws-status" class="status disconnected">Disconnected</span>
+  </header>
+
+  <main>
+    <!-- Left column: camera + sensor -->
+    <section class="panel panel-camera">
+      <h2>Camera</h2>
+      <div class="camera-frame">
+        <img id="camera-img" src="/camera/stream" alt="Camera feed" />
+      </div>
+
+      <div class="distance-box">
+        <span class="distance-label">Distance</span>
+        <span id="distance-value" class="distance-value">-- cm</span>
+      </div>
+
+      <div class="servo-controls">
+        <label>
+          Pan
+          <input type="range" id="pan-slider" min="0" max="180" value="90" />
+          <span id="pan-value">90°</span>
+        </label>
+        <label>
+          Tilt
+          <input type="range" id="tilt-slider" min="0" max="90" value="25" />
+          <span id="tilt-value">25°</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Right column: drive pad -->
+    <section class="panel panel-drive">
+      <h2>Drive</h2>
+      <div class="dpad">
+        <!--
+          Grid layout (3x3):
+            [diag-fl] [forward]       [diag-fr]
+            [left]    [stop]          [right]
+            [diag-bl] [backward]      [diag-br]
+        -->
+        <button class="dpad-btn" data-dir="diagonal_forward_left"  title="Forward-Left">&#8598;</button>
+        <button class="dpad-btn" data-dir="forward"                title="Forward">&#8593;</button>
+        <button class="dpad-btn" data-dir="diagonal_forward_right" title="Forward-Right">&#8599;</button>
+
+        <button class="dpad-btn" data-dir="strafe_left"            title="Strafe Left">&#8592;</button>
+        <button class="dpad-btn dpad-stop" data-dir="stop"         title="Stop">&#9632;</button>
+        <button class="dpad-btn" data-dir="strafe_right"           title="Strafe Right">&#8594;</button>
+
+        <button class="dpad-btn" data-dir="diagonal_backward_left" title="Backward-Left">&#8601;</button>
+        <button class="dpad-btn" data-dir="backward"               title="Backward">&#8595;</button>
+        <button class="dpad-btn" data-dir="diagonal_backward_right" title="Backward-Right">&#8600;</button>
+      </div>
+
+      <p class="hint">Hold a button to drive &bull; Release to stop<br/>Keyboard arrows also work</p>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
