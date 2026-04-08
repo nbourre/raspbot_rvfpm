@@ -150,7 +150,7 @@ window.addEventListener("keyup", (e) => {
 panSlider.addEventListener("input", () => {
   const angle = parseInt(panSlider.value, 10);
   panValue.textContent = `${angle}deg`;
-  send({ type: "servo", axis: "pan", angle });
+  send({ type: "servo", axis: "pan", angle: 180 - angle });
 });
 
 tiltSlider.addEventListener("input", () => {
