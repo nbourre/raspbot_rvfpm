@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 cli/menu.py
 -----------
@@ -33,7 +34,7 @@ def _get_int(prompt: str, default: int) -> int:
     try:
         return int(raw)
     except ValueError:
-        print("  Invalid – using default.")
+        print("  Invalid - using default.")
         return default
 
 
@@ -74,7 +75,7 @@ def menu_motors(bot) -> None:
             continue
         speed = _get_int("  Speed (0-255)", 150)
         duration = _get_int("  Duration seconds", 2)
-        print(f"  {label} for {duration}s …")
+        print(f"  {label} for {duration}s ...")
         fn()
         time.sleep(duration)
         bot.motors.stop()
@@ -107,15 +108,15 @@ def menu_servos(bot) -> None:
 def menu_sensors(bot) -> None:
     while True:
         _print_header("Sensors")
-        print("  1. Distance – live (Ctrl+C to stop)")
-        print("  2. Line tracker – live (Ctrl+C to stop)")
-        print("  3. IR keycode – live (Ctrl+C to stop)")
+        print("  1. Distance - live (Ctrl+C to stop)")
+        print("  2. Line tracker - live (Ctrl+C to stop)")
+        print("  3. IR keycode - live (Ctrl+C to stop)")
         print("  0. Back")
         choice = _prompt()
         if choice == "0":
             return
         if choice == "1":
-            print("  Reading distance … (Ctrl+C to stop)")
+            print("  Reading distance ... (Ctrl+C to stop)")
             with bot.ultrasonic:
                 try:
                     while True:
@@ -124,7 +125,7 @@ def menu_sensors(bot) -> None:
                 except KeyboardInterrupt:
                     print()
         elif choice == "2":
-            print("  Reading line tracker … (Ctrl+C to stop)")
+            print("  Reading line tracker ... (Ctrl+C to stop)")
             try:
                 while True:
                     state = bot.line_tracker.read()
@@ -133,7 +134,7 @@ def menu_sensors(bot) -> None:
             except KeyboardInterrupt:
                 print()
         elif choice == "3":
-            print("  Reading IR codes … (Ctrl+C to stop)")
+            print("  Reading IR codes ... (Ctrl+C to stop)")
             with bot.ir:
                 try:
                     while True:
@@ -181,7 +182,7 @@ def menu_leds(bot) -> None:
         elif choice == "2":
             from raspbot import LedColor
             duration = _get_int("  Duration seconds", 5)
-            print(f"  Breathing cyan for {duration}s …")
+            print(f"  Breathing cyan for {duration}s ...")
             bot.light_effects.start_breathing(LedColor.CYAN, speed=0.01)
             end = time.monotonic() + duration
             while time.monotonic() < end:
@@ -191,7 +192,7 @@ def menu_leds(bot) -> None:
             bot.leds.off_all()
         elif choice == "3":
             duration = _get_int("  Duration seconds", 5)
-            print(f"  River chase for {duration}s …")
+            print(f"  River chase for {duration}s ...")
             bot.light_effects.start_river(speed=0.03)
             end = time.monotonic() + duration
             while time.monotonic() < end:
@@ -235,7 +236,7 @@ def menu_buzzer(bot) -> None:
 def menu_camera(bot) -> None:
     while True:
         _print_header("Camera")
-        print("  1. Capture frame ? frame.jpg")
+        print("  1. Capture frame -> frame.jpg")
         print("  0. Back")
         choice = _prompt()
         if choice == "0":
@@ -298,9 +299,9 @@ def main() -> None:
 
     print()
     print("+--------------------------------------+")
-    print("¦     Raspbot RVFPM – Test Menu        ¦")
+    print("|     Raspbot RVFPM - Test Menu        |")
     print("+--------------------------------------+")
-    print("  Initialising robot …")
+    print("  Initialising robot ...")
 
     with Robot() as bot:
         print("  Robot ready.\n")
@@ -311,7 +312,7 @@ def main() -> None:
             print("  0. Quit")
             choice = _prompt()
             if choice == "0":
-                print("  Shutting down …")
+                print("  Shutting down ...")
                 bot.motors.stop()
                 bot.leds.off_all()
                 break
