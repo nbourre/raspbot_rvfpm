@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 web/routers/camera.py
 ---------------------
@@ -5,7 +6,7 @@ MJPEG streaming endpoint: GET /camera/stream
 
 Delivers a multipart/x-mixed-replace stream of JPEG frames captured from
 the Pi camera via OpenCV at approximately 10 FPS.  The stream is consumed
-directly by an <img> tag in the browser – no JavaScript needed for video.
+directly by an <img> tag in the browser - no JavaScript needed for video.
 """
 
 from __future__ import annotations

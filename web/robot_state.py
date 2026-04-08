@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 web/robot_state.py
 ------------------
@@ -14,7 +15,7 @@ from typing import Set
 
 from fastapi import WebSocket
 
-# The single Robot instance – set by lifespan, cleared on shutdown.
+# The single Robot instance - set by lifespan, cleared on shutdown.
 robot = None
 
 # All currently connected WebSocket clients.

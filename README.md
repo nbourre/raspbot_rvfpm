@@ -5,8 +5,8 @@ A two-part controller for the **Yahboom Raspbot V2** robot car, built on the
 
 | Part | Description |
 |------|-------------|
-| `cli/` | Interactive numbered test menu – use over SSH |
-| `web/` | FastAPI web server – control from a browser on the robot's Wi-Fi |
+| `cli/` | Interactive numbered test menu - use over SSH |
+| `web/` | FastAPI web server - control from a browser on the robot Wi-Fi |
 
 ---
 
@@ -18,7 +18,7 @@ A two-part controller for the **Yahboom Raspbot V2** robot car, built on the
    ```
    sudo raspi-config
    ```
-   Interface Options ? I2C ? Enable
+   Interface Options -> I2C -> Enable
 
 2. Add your user to the `i2c` group:
    ```
@@ -39,9 +39,9 @@ A two-part controller for the **Yahboom Raspbot V2** robot car, built on the
    On Pi OS Bookworm with `libcamera`, check `ls /dev/video*` after enabling
    the camera in `raspi-config`.
 
-### Wi-Fi – Access Point mode
+### Wi-Fi - Access Point mode
 
-The robot acts as a Wi-Fi access point.  Connect your device to the robot's
+The robot acts as a Wi-Fi access point.  Connect your device to the robot
 AP network, then open `http://<robot-ip>:8000` in a browser.
 
 Typical AP IP address: `192.168.4.1` (varies by configuration).
@@ -60,7 +60,7 @@ pip install -r requirements.txt
 
 ---
 
-## Part 1 – CLI Test Menu
+## Part 1 - CLI Test Menu
 
 Run from the repo root (over SSH or locally):
 
@@ -72,13 +72,13 @@ python -m cli.menu
 
 ```
 Main Menu
-  1. Motors   – all 8 mecanum directions + stop
-  2. Servos   – pan / tilt / home
-  3. Sensors  – live distance, line tracker, IR codes
-  4. LEDs     – set color, breathing/river effects, off
-  5. Buzzer   – single beep, 3-beep pattern
-  6. Camera   – capture frame ? frame.jpg
-  7. OLED     – write two lines of text
+  1. Motors   - all 8 mecanum directions + stop
+  2. Servos   - pan / tilt / home
+  3. Sensors  - live distance, line tracker, IR codes
+  4. LEDs     - set color, breathing/river effects, off
+  5. Buzzer   - single beep, 3-beep pattern
+  6. Camera   - capture frame -> frame.jpg
+  7. OLED     - write two lines of text
   0. Quit
 ```
 
@@ -88,7 +88,7 @@ you press `Ctrl+C`.
 
 ---
 
-## Part 2 – Web Controller
+## Part 2 - Web Controller
 
 ### Run manually
 
@@ -103,29 +103,29 @@ Open `http://<robot-ip>:8000` in any browser on the same Wi-Fi network.
 | Feature | Details |
 |---------|---------|
 | **Camera feed** | Live MJPEG stream at ~10 FPS from `<img>` tag |
-| **Distance** | Ultrasonic sensor reading, auto-refreshed ~10×/s |
-| **Pan slider** | Controls the pan servo (0–180°) |
-| **Tilt slider** | Controls the tilt servo (0–90°) |
-| **Drive pad** | 3×3 grid of 8 direction buttons + stop centre |
+| **Distance** | Ultrasonic sensor reading, auto-refreshed ~10x/s |
+| **Pan slider** | Controls the pan servo (0-180 deg) |
+| **Tilt slider** | Controls the tilt servo (0-90 deg) |
+| **Drive pad** | 3x3 grid of 8 direction buttons + stop centre |
 
 ### Drive pad
 
 ```
-  ?   ?   ?       diagonal-forward-left  / forward / diagonal-forward-right
-  ?   ¦   ?       strafe-left            / stop    / strafe-right
-  ?   ?   ?       diagonal-backward-left / backward / diagonal-backward-right
+  NW   N   NE       diagonal-forward-left  / forward / diagonal-forward-right
+  W    .   E        strafe-left            / stop    / strafe-right
+  SW   S   SE       diagonal-backward-left / backward / diagonal-backward-right
 ```
 
 - **Hold** a button to drive continuously; **release** to stop.
 - Works with mouse, touch (phone/tablet), and keyboard arrow keys.
-- Keyboard arrows map to: `?` forward, `?` backward, `?` strafe-left,
-  `?` strafe-right.
+- Keyboard arrows map to: Up=forward, Down=backward, Left=strafe-left,
+  Right=strafe-right.
 - The robot stops automatically when the browser tab is closed or the
   WebSocket disconnects.
 
 ---
 
-## systemd service – Auto-start on boot
+## systemd service - Auto-start on boot
 
 Copy the service file, enable, and start it:
 
@@ -159,17 +159,17 @@ path or username differs, then run `sudo systemctl daemon-reload`.
 ```
 raspbot_rvfpm/
 +-- cli/
-¦   +-- menu.py              # Interactive SSH test menu
+|   +-- menu.py              # Interactive SSH test menu
 +-- web/
-¦   +-- main.py              # FastAPI app entry point
-¦   +-- robot_state.py       # Shared Robot() singleton + WS broadcast task
-¦   +-- routers/
-¦   ¦   +-- ws.py            # WebSocket endpoint /ws (drive + servo commands)
-¦   ¦   +-- camera.py        # MJPEG stream GET /camera/stream
-¦   +-- static/
-¦       +-- index.html       # Single-page UI
-¦       +-- style.css        # Dark-theme styles
-¦       +-- app.js           # WebSocket client, drive pad, servo sliders
+|   +-- main.py              # FastAPI app entry point
+|   +-- robot_state.py       # Shared Robot() singleton + WS broadcast task
+|   +-- routers/
+|   |   +-- ws.py            # WebSocket endpoint /ws (drive + servo commands)
+|   |   +-- camera.py        # MJPEG stream GET /camera/stream
+|   +-- static/
+|       +-- index.html       # Single-page UI
+|       +-- style.css        # Dark-theme styles
+|       +-- app.js           # WebSocket client, drive pad, servo sliders
 +-- raspbot.service          # systemd unit file
 +-- requirements.txt
 +-- README.md

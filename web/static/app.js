@@ -4,12 +4,12 @@
  * WebSocket client + drive pad + servo sliders for the Raspbot RVFPM UI.
  *
  * Drive pad behaviour:
- *   - mousedown / touchstart  ? send drive command (held continuously)
- *   - mouseup  / touchend     ? send stop
- *   - Keyboard arrow keys     ? same logic on keydown / keyup
+ *   - mousedown / touchstart  -> send drive command (held continuously)
+ *   - mouseup  / touchend     -> send stop
+ *   - Keyboard arrow keys     -> same logic on keydown / keyup
  *
  * Servo sliders:
- *   - input event on each range ? send servo command immediately
+ *   - input event on each range -> send servo command immediately
  *
  * Distance display:
  *   - Updated on every incoming WS message of type "distance"
@@ -27,7 +27,7 @@ const tiltSlider  = document.getElementById("tilt-slider");
 const tiltValue   = document.getElementById("tilt-value");
 const dpadButtons = document.querySelectorAll(".dpad-btn");
 
-// -- WebSocket ----------------------------------------------------------------
+// -- WebSocket ---------------------------------------------------------------
 let ws = null;
 let activeDirection = null;   // currently pressed direction (or null)
 
@@ -67,7 +67,7 @@ function connect() {
 
 connect();
 
-// -- Drive helpers ------------------------------------------------------------
+// -- Drive helpers -----------------------------------------------------------
 function startDrive(direction) {
   if (direction === activeDirection) return;
   activeDirection = direction;
@@ -84,7 +84,7 @@ function stopDrive() {
   send({ type: "drive", direction: "stop" });
 }
 
-// -- D-Pad buttons (mouse + touch) --------------------------------------------
+// -- D-Pad buttons (mouse + touch) -------------------------------------------
 dpadButtons.forEach((btn) => {
   const dir = btn.dataset.dir;
 
@@ -115,7 +115,7 @@ window.addEventListener("touchend", () => {
   stopDrive();
 });
 
-// -- Keyboard arrows ----------------------------------------------------------
+// -- Keyboard arrows ---------------------------------------------------------
 const KEY_MAP = {
   ArrowUp:    "forward",
   ArrowDown:  "backward",
@@ -146,15 +146,15 @@ window.addEventListener("keyup", (e) => {
   }
 });
 
-// -- Servo sliders ------------------------------------------------------------
+// -- Servo sliders -----------------------------------------------------------
 panSlider.addEventListener("input", () => {
   const angle = parseInt(panSlider.value, 10);
-  panValue.textContent = `${angle}°`;
+  panValue.textContent = `${angle}deg`;
   send({ type: "servo", axis: "pan", angle });
 });
 
 tiltSlider.addEventListener("input", () => {
   const angle = parseInt(tiltSlider.value, 10);
-  tiltValue.textContent = `${angle}°`;
+  tiltValue.textContent = `${angle}deg`;
   send({ type: "servo", axis: "tilt", angle });
 });
