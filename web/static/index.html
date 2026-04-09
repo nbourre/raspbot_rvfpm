@@ -9,7 +9,10 @@
 <body>
   <header>
     <h1>Raspbot RVFPM</h1>
-    <span id="ws-status" class="status disconnected">Disconnected</span>
+    <div class="header-status">
+      <span id="ws-status" class="status disconnected">Disconnected</span>
+      <span id="gp-status" class="status gp-disconnected">No Gamepad</span>
+    </div>
   </header>
 
   <main>
@@ -68,7 +71,11 @@
         <button class="spin-btn" data-dir="turn_right" title="Spin Right (E)">&#8635;</button>
       </div>
 
-      <p class="hint">Hold to drive &bull; Release to stop<br/>WASD / arrows to drive &bull; Q/E to spin</p>
+      <p class="hint">
+        Hold to drive &bull; Release to stop<br/>
+        WASD / arrows &bull; Q/E to spin<br/>
+        Gamepad: L-stick=drive &bull; R-stick=spin &bull; D-pad=camera
+      </p>
     </section>
   </main>
 

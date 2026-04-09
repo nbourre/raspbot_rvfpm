@@ -43,6 +43,7 @@ def _get_int(prompt: str, default: int) -> int:
 # ---------------------------------------------------------------------------
 
 def menu_motors(bot) -> None:
+    speed = 150   # default; overwritten by user prompt before any lambda runs
     MOVES = {
         "1":  ("Forward",                lambda: bot.motors.forward(speed)),
         "2":  ("Backward",               lambda: bot.motors.backward(speed)),

@@ -22,11 +22,18 @@ from web.routers import camera as camera_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Create the Robot on startup; tear it down on shutdown."""
+    import sys
     from raspbot import Robot
 
-    state.robot = Robot()
-    state.robot.__enter__()
-    state.start_background_tasks()
+    try:
+        state.robot = Robot()
+        state.robot.__enter__()
+        state.start_background_tasks()
+    except Exception:
+        if state.robot is not None:
+            state.robot.__exit__(*sys.exc_info())
+            state.robot = None
+        raise
     yield
     # Shutdown
     state.stop_background_tasks()
