@@ -7,6 +7,7 @@
   --border:    #2e3347;
   --accent:    #4a9eff;
   --danger:    #ff4f4f;
+  --spin:      #c084fc;
   --text:      #e2e8f0;
   --muted:     #7a859e;
   --btn-size:  72px;
@@ -192,6 +193,33 @@ input[type="range"]::-moz-range-thumb {
 .dpad-stop:hover  { background: #3a2020; }
 .dpad-stop.pressed{ background: var(--danger); color: #fff; }
 
+/* -- Spin row ---------------------------------------------------- */
+.spin-row {
+  display: flex;
+  gap: var(--gap);
+  justify-content: center;
+  user-select: none;
+}
+
+.spin-btn {
+  width:  var(--btn-size);
+  height: var(--btn-size);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--spin);
+  font-size: 1.6rem;
+  cursor: pointer;
+  transition: background 80ms, transform 80ms;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+.spin-btn:hover   { background: #252a3a; }
+.spin-btn:active,
+.spin-btn.pressed { background: #4a1d6e; color: #fff; transform: scale(0.93); }
+
+/* -- Hint -------------------------------------------------------- */
 .hint {
   font-size: 0.72rem;
   color: var(--muted);

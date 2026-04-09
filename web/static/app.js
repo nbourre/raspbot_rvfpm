@@ -6,10 +6,11 @@
  * Drive pad behaviour:
  *   - mousedown / touchstart  -> send drive command (held continuously)
  *   - mouseup  / touchend     -> send stop
- *   - Keyboard arrow keys     -> same logic on keydown / keyup
+ *   - WASD / arrow keys + Q/E -> same logic on keydown / keyup
  *
  * Servo sliders:
  *   - input event on each range -> send servo command immediately
+ *   - pan is inverted (slider 0 -> servo 180, slider 180 -> servo 0)
  *
  * Distance display:
  *   - Updated on every incoming WS message of type "distance"
@@ -25,7 +26,9 @@ const panSlider   = document.getElementById("pan-slider");
 const panValue    = document.getElementById("pan-value");
 const tiltSlider  = document.getElementById("tilt-slider");
 const tiltValue   = document.getElementById("tilt-value");
-const dpadButtons = document.querySelectorAll(".dpad-btn");
+
+// All drive buttons: d-pad + spin row combined
+const driveButtons = document.querySelectorAll(".dpad-btn, .spin-btn");
 
 // -- WebSocket ---------------------------------------------------------------
 let ws = null;
@@ -84,8 +87,8 @@ function stopDrive() {
   send({ type: "drive", direction: "stop" });
 }
 
-// -- D-Pad buttons (mouse + touch) -------------------------------------------
-dpadButtons.forEach((btn) => {
+// -- Drive buttons (mouse + touch) -------------------------------------------
+driveButtons.forEach((btn) => {
   const dir = btn.dataset.dir;
 
   // Mouse
@@ -105,41 +108,46 @@ dpadButtons.forEach((btn) => {
 
 // Release on mouse-up anywhere (handles dragging off button)
 window.addEventListener("mouseup", () => {
-  dpadButtons.forEach((b) => b.classList.remove("pressed"));
+  driveButtons.forEach((b) => b.classList.remove("pressed"));
   stopDrive();
 });
 
 // Release on touch-end anywhere
 window.addEventListener("touchend", () => {
-  dpadButtons.forEach((b) => b.classList.remove("pressed"));
+  driveButtons.forEach((b) => b.classList.remove("pressed"));
   stopDrive();
 });
 
-// -- Keyboard arrows ---------------------------------------------------------
+// -- Keyboard: WASD + arrows + QE --------------------------------------------
 const KEY_MAP = {
   ArrowUp:    "forward",
   ArrowDown:  "backward",
   ArrowLeft:  "strafe_left",
   ArrowRight: "strafe_right",
+  w: "forward",
+  s: "backward",
+  a: "strafe_left",
+  d: "strafe_right",
+  q: "turn_left",
+  e: "turn_right",
 };
 
-window.addEventListener("keydown", (e) => {
-  if (e.repeat) return;
-  const dir = KEY_MAP[e.key];
+window.addEventListener("keydown", (evt) => {
+  if (evt.repeat) return;
+  const dir = KEY_MAP[evt.key];
   if (dir) {
-    e.preventDefault();
-    // Highlight the matching button
-    dpadButtons.forEach((b) => {
+    evt.preventDefault();
+    driveButtons.forEach((b) => {
       if (b.dataset.dir === dir) b.classList.add("pressed");
     });
     startDrive(dir);
   }
 });
 
-window.addEventListener("keyup", (e) => {
-  const dir = KEY_MAP[e.key];
+window.addEventListener("keyup", (evt) => {
+  const dir = KEY_MAP[evt.key];
   if (dir) {
-    dpadButtons.forEach((b) => {
+    driveButtons.forEach((b) => {
       if (b.dataset.dir === dir) b.classList.remove("pressed");
     });
     stopDrive();
