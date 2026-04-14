@@ -466,7 +466,14 @@ function renderConfig(cfg) {
   setConfigInput("cfg-overlay-max",      cfg.overlay_max_ratio, 2);
   setConfigInput("cfg-center-tolerance", cfg.center_tolerance, 2);
   setConfigInput("cfg-radius-tolerance", cfg.radius_tolerance, 2);
-  renderHsvTab(activeHsvColor, cfg);
+  // Populate per-color cache from loaded config
+  ["red","green","blue","black"].forEach(color => {
+    const colorCfg = (cfg.colors || {})[color] || {};
+    const ranges   = colorCfg.ranges || [[0,179,0,255,0,255]];
+    const r0       = ranges[0] || [0,179,0,255,0,255];
+    hsvCache[color] = [...r0];
+  });
+  renderHsvTab(activeHsvColor);
 }
 
 function setConfigInput(id, value, decimals) {
@@ -483,19 +490,26 @@ function getConfigInput(id) {
 const btnSaveCfg = document.getElementById("btn-save-config");
 if (btnSaveCfg) {
   btnSaveCfg.addEventListener("click", async () => {
+    // Flush active tab's slider DOM values into the cache first
+    flushActiveSlidersToCacheAndServer(false);
+
     const updated = {
       ...cfgData,
-      num_stops:        getConfigInput("cfg-num-stops"),
-      hold_duration:    getConfigInput("cfg-hold-duration"),
+      num_stops:         getConfigInput("cfg-num-stops"),
+      hold_duration:     getConfigInput("cfg-hold-duration"),
       overlay_min_ratio: getConfigInput("cfg-overlay-min"),
       overlay_max_ratio: getConfigInput("cfg-overlay-max"),
-      center_tolerance: getConfigInput("cfg-center-tolerance"),
-      radius_tolerance: getConfigInput("cfg-radius-tolerance"),
+      center_tolerance:  getConfigInput("cfg-center-tolerance"),
+      radius_tolerance:  getConfigInput("cfg-radius-tolerance"),
     };
-    // Collect HSV values from sliders
+    // Write all colors from cache
     ["red","green","blue","black"].forEach(color => {
-      const ranges = readHsvSliders(color);
-      if (ranges) updated.colors[color] = { ranges };
+      const cached = hsvCache[color];
+      if (!cached) return;
+      const prevRanges = ((cfgData.colors || {})[color] || {}).ranges || [[0,179,0,255,0,255]];
+      const newRanges  = [...prevRanges];
+      newRanges[0]     = [...cached];
+      updated.colors[color] = { ranges: newRanges };
     });
     try {
       await fetch("/game/config", {
@@ -527,101 +541,100 @@ if (configToggle) {
 // ---------------------------------------------------------------------------
 
 let activeHsvColor = "red";
-const hsvSliders   = {};   // { colorName: { hMin, hMax, sMin, sMax, vMin, vMax } }
 
-function renderHsvTab(color, cfg) {
+// Per-color flat value cache: { red: [hMin,hMax,sMin,sMax,vMin,vMax], ... }
+const hsvCache = { red: null, green: null, blue: null, black: null };
+
+const HSV_KEYS = ["h-min","h-max","s-min","s-max","v-min","v-max"];
+
+/**
+ * Populate the 6 HSV sliders from hsvCache[color] and update the active tab.
+ */
+function renderHsvTab(color) {
   activeHsvColor = color;
+
   // Highlight active tab
   document.querySelectorAll(".hsv-tab").forEach(t => {
     t.classList.toggle("active", t.dataset.color === color);
   });
-  // Populate sliders for this color
-  const colorCfg = (cfg.colors || {})[color] || {};
-  const ranges   = colorCfg.ranges || [[0,179,0,255,0,255]];
-  // Use first range for single-range colors; red has two ranges
-  // We display the first range's sliders; second range (red wrap) is stored as-is
-  const r0 = ranges[0] || [0,179,0,255,0,255];
 
-  ["h-min","h-max","s-min","s-max","v-min","v-max"].forEach((key, i) => {
+  // Use cached values (or safe defaults if not loaded yet)
+  const vals = hsvCache[color] || [0, 179, 0, 255, 0, 255];
+
+  HSV_KEYS.forEach((key, i) => {
     const slider = document.getElementById(`hsv-${key}`);
     const label  = document.getElementById(`hsv-${key}-val`);
     if (slider) {
-      slider.value = r0[i];
-      if (label) label.textContent = r0[i];
-      slider.oninput = () => {
-        if (label) label.textContent = slider.value;
-      };
+      slider.value = vals[i];
+      if (label) label.textContent = vals[i];
     }
   });
-
-  // Store ref
-  if (!hsvSliders[color]) hsvSliders[color] = {};
 }
 
-function readHsvSliders(color) {
-  const prev = (cfgData.colors || {})[color];
-  const prevRanges = prev ? prev.ranges : [[0,179,0,255,0,255]];
-  const keys = ["h-min","h-max","s-min","s-max","v-min","v-max"];
-  const vals = keys.map(k => {
+/**
+ * Read current slider DOM values into hsvCache[activeHsvColor].
+ * Optionally push to server (for mask preview sync).
+ */
+function flushActiveSlidersToCacheAndServer(pushToServer = true) {
+  const vals = HSV_KEYS.map(k => {
     const el = document.getElementById(`hsv-${k}`);
     return el ? parseInt(el.value) : 0;
   });
-  // Replace only the first range; keep any additional ranges (e.g. red wrap)
-  const newRanges = [...prevRanges];
-  newRanges[0] = vals;
-  return newRanges;
+  hsvCache[activeHsvColor] = vals;
+  if (pushToServer) pushHsvToServer();
 }
+
+// Update cache on every slider move (so tab switching never loses values)
+document.querySelectorAll(HSV_KEYS.map(k => `#hsv-${k}`).join(","))
+  .forEach(slider => {
+    slider.addEventListener("input", () => {
+      // Update cache for active color immediately
+      const i    = HSV_KEYS.indexOf(slider.id.replace("hsv-", ""));
+      if (i >= 0 && hsvCache[activeHsvColor]) {
+        hsvCache[activeHsvColor][i] = parseInt(slider.value);
+      }
+      // Update label
+      const label = document.getElementById(`${slider.id}-val`);
+      if (label) label.textContent = slider.value;
+    });
+  });
 
 // Bind HSV tab buttons
 document.querySelectorAll(".hsv-tab").forEach(tab => {
   tab.addEventListener("click", () => {
-    // Save current slider values back to cfgData before switching
-    if (cfgData.colors && cfgData.colors[activeHsvColor]) {
-      cfgData.colors[activeHsvColor].ranges = readHsvSliders(activeHsvColor);
-    }
-    renderHsvTab(tab.dataset.color, cfgData);
+    // Flush current slider values before switching
+    flushActiveSlidersToCacheAndServer(false);
+    renderHsvTab(tab.dataset.color);
   });
 });
 
 // ---------------------------------------------------------------------------
-// HSV mask preview
+// HSV mask preview (live)
 // ---------------------------------------------------------------------------
 
 const maskPreviewWrap = document.getElementById("mask-preview-wrap");
 const maskPreviewImg  = document.getElementById("mask-preview-img");
 const btnMaskRefresh  = document.getElementById("btn-mask-refresh");
 
-let maskRefreshTimer  = null;   // debounce timer
+let maskLiveTimer     = null;   // setInterval handle for live preview
+let maskDirty         = false;  // sliders changed since last server push
 
 /**
- * Fetch and display the mask preview for the currently active HSV color.
- * Saves the current slider values to the server first so the preview reflects
- * whatever the sliders currently say (even before clicking Save).
- */
-async function refreshMaskPreview() {
-  if (!maskPreviewWrap || !maskPreviewImg) return;
-  if (maskPreviewWrap.style.display === "none") return;
-
-  // Push current slider values to the server (temp save) before fetching mask
-  await pushHsvToServer();
-
-  // Bust cache with timestamp so the browser doesn't reuse a stale image
-  maskPreviewImg.src = `/game/mask?color=${encodeURIComponent(activeHsvColor)}&t=${Date.now()}`;
-}
-
-/**
- * Write only the HSV values for the active color to the server without
- * touching gameplay params.  This is a lightweight partial save used by the
- * mask preview so results are always in sync with the sliders.
+ * Push current active-color slider values to the server so the mask
+ * endpoint returns an up-to-date image.  Only sends if sliders changed.
  */
 async function pushHsvToServer() {
   if (!cfgData || !cfgData.colors) return;
-  const ranges = readHsvSliders(activeHsvColor);
-  const patch  = {
+  const cached = hsvCache[activeHsvColor];
+  if (!cached) return;
+  const prevRanges = ((cfgData.colors || {})[activeHsvColor] || {}).ranges || [[0,179,0,255,0,255]];
+  const newRanges  = [...prevRanges];
+  newRanges[0]     = [...cached];
+  const patch = {
     ...cfgData,
     colors: {
       ...cfgData.colors,
-      [activeHsvColor]: { ranges },
+      [activeHsvColor]: { ranges: newRanges },
     },
   };
   try {
@@ -630,47 +643,60 @@ async function pushHsvToServer() {
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify(patch),
     });
-    // Update local mirror so subsequent saves include these values
     cfgData = patch;
   } catch (_) {}
 }
 
-function scheduleMaskRefresh(delayMs = 600) {
-  if (maskRefreshTimer !== null) clearTimeout(maskRefreshTimer);
-  maskRefreshTimer = setTimeout(() => {
-    maskRefreshTimer = null;
-    refreshMaskPreview();
-  }, delayMs);
+async function fetchMaskFrame() {
+  if (!maskPreviewImg) return;
+  // Push slider changes to server before fetching image
+  if (maskDirty) {
+    maskDirty = false;
+    await pushHsvToServer();
+  }
+  // Set src with cache-bust; browser load is async so UI stays responsive
+  maskPreviewImg.src = `/game/mask?color=${encodeURIComponent(activeHsvColor)}&t=${Date.now()}`;
 }
 
-// Show/hide the mask preview section when detect test is toggled
+function startMaskLive() {
+  if (maskLiveTimer !== null) return;
+  fetchMaskFrame();
+  maskLiveTimer = setInterval(fetchMaskFrame, 800);
+}
+
+function stopMaskLive() {
+  if (maskLiveTimer !== null) {
+    clearInterval(maskLiveTimer);
+    maskLiveTimer = null;
+  }
+}
+
+// Show/hide the mask preview section
 function setMaskPreviewVisible(visible) {
   if (!maskPreviewWrap) return;
   maskPreviewWrap.style.display = visible ? "" : "none";
-  if (visible) refreshMaskPreview();
+  if (visible) startMaskLive();
+  else         stopMaskLive();
 }
 
-// Manual refresh button
+// Manual refresh button (kept as instant-refresh shortcut)
 if (btnMaskRefresh) {
-  btnMaskRefresh.addEventListener("click", () => refreshMaskPreview());
+  btnMaskRefresh.addEventListener("click", () => fetchMaskFrame());
 }
 
-// Auto-refresh on any HSV slider change (debounced)
-document.querySelectorAll("#hsv-h-min,#hsv-h-max,#hsv-s-min,#hsv-s-max,#hsv-v-min,#hsv-v-max")
+// Mark dirty when any HSV slider moves so next frame push is triggered
+document.querySelectorAll(HSV_KEYS.map(k => `#hsv-${k}`).join(","))
   .forEach(slider => {
-    slider.addEventListener("input", () => {
-      if (maskPreviewWrap && maskPreviewWrap.style.display !== "none") {
-        scheduleMaskRefresh(500);
-      }
-    });
+    slider.addEventListener("input", () => { maskDirty = true; });
   });
 
-// Refresh mask when switching color tabs (if preview is visible)
-// This is patched into the existing tab click handler via a second listener.
+// Restart live preview for new color when switching tabs
 document.querySelectorAll(".hsv-tab").forEach(tab => {
   tab.addEventListener("click", () => {
-    if (maskPreviewWrap && maskPreviewWrap.style.display !== "none") {
-      scheduleMaskRefresh(200);
+    if (maskLiveTimer !== null) {
+      // Immediately fetch new color's mask without waiting for next tick
+      maskDirty = false;   // cache already flushed by tab handler above
+      fetchMaskFrame();
     }
   });
 });
