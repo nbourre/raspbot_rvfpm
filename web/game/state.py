@@ -146,7 +146,7 @@ def get_state() -> dict[str, Any]:
     }
 
 
-def reset() -> None:
+def reset(broadcast: bool = True) -> None:
     """Abort any running game and return to IDLE."""
     global phase, stop_index, sequence, completed, overlay_radius
     global start_time, hold_start, elapsed_ms, _task
@@ -172,11 +172,22 @@ def reset() -> None:
         except Exception:
             pass
 
+    # Notify all clients that the game is back to IDLE.
+    # reset() may be called from a sync context (WS message handler runs in the
+    # event loop thread), so schedule the coroutine as a fire-and-forget task.
+    if broadcast:
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(_broadcast_state())
+        except Exception:
+            pass
+
 
 def start() -> None:
     """Launch the game loop as an asyncio background task."""
     global _task
-    reset()
+    reset(broadcast=False)   # game_loop will broadcast COUNTDOWN immediately
     _task = asyncio.create_task(_game_loop())
 
 
