@@ -21,6 +21,86 @@ import numpy as np
 
 
 # ---------------------------------------------------------------------------
+# Detection helpers
+# ---------------------------------------------------------------------------
+
+def _detect_by_hough(
+    frame: np.ndarray,
+    mask: np.ndarray,
+    w: int,
+    h: int,
+    min_r: int,
+    max_r: int,
+) -> list[tuple[int, int, int]]:
+    """Hough-gradient circle detection on the masked grayscale image.
+
+    Works well for bright-coloured circles (red, green, blue) whose edges are
+    clearly visible after masking.  Returns list of (cx_px, cy_px, r_px).
+    """
+    import cv2 as _cv2
+    masked_gray = _cv2.bitwise_and(
+        _cv2.cvtColor(frame, _cv2.COLOR_BGR2GRAY), mask
+    )
+    blurred = _cv2.GaussianBlur(masked_gray, (9, 9), 2)
+    min_dist = int(w * 0.10)
+
+    circles = _cv2.HoughCircles(
+        blurred,
+        _cv2.HOUGH_GRADIENT,
+        dp=1.2,
+        minDist=min_dist,
+        param1=80,
+        param2=30,
+        minRadius=min_r,
+        maxRadius=max_r,
+    )
+    if circles is None:
+        return []
+    return [
+        (int(round(cx)), int(round(cy)), int(round(r)))
+        for cx, cy, r in circles[0]
+    ]
+
+
+def _detect_by_contour(
+    mask: np.ndarray,
+    w: int,
+    h: int,
+    min_r: int,
+    max_r: int,
+) -> list[tuple[int, int, int]]:
+    """Contour-based circle detection.
+
+    Used for **black** circles: Hough relies on Canny edge detection on the
+    masked-grey image, but black pixels are near-zero after the bitwise-AND
+    with the grey frame, so edges vanish.  Contour fitting works directly on
+    the binary mask, where black regions appear as solid white blobs.
+
+    Returns list of (cx_px, cy_px, r_px).
+    """
+    import cv2 as _cv2
+    results = []
+    contours, _ = _cv2.findContours(
+        mask, _cv2.RETR_EXTERNAL, _cv2.CHAIN_APPROX_SIMPLE
+    )
+    for cnt in contours:
+        area = _cv2.contourArea(cnt)
+        if area < np.pi * min_r ** 2:
+            continue
+        (cx, cy), r = _cv2.minEnclosingCircle(cnt)
+        r = int(round(r))
+        if r < min_r or r > max_r:
+            continue
+        # Circularity check: area / (pi * r^2) should be close to 1 for a
+        # filled circle.  Reject elongated or hollow shapes.
+        circularity = area / max(np.pi * r * r, 1.0)
+        if circularity < 0.45:
+            continue
+        results.append((int(round(cx)), int(round(cy)), r))
+    return results
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -77,37 +157,17 @@ def detect_circles(frame: np.ndarray, cfg: dict[str, Any]) -> list[dict]:
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN,  kernel, iterations=2)
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
 
-        # Hough Circle detection on the masked grayscale
-        masked_gray = cv2.bitwise_and(
-            cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), mask
-        )
-        blurred = cv2.GaussianBlur(masked_gray, (9, 9), 2)
-
-        # dp=1.2: accumulator resolution ratio
-        # minDist: circles must be at least 10% of width apart
-        # param1: Canny high threshold
-        # param2: accumulator threshold (lower = more false positives)
-        # minRadius / maxRadius: 3%-50% of frame width
         min_r = max(5, int(w * 0.03))
         max_r = int(w * 0.50)
-        min_dist = int(w * 0.10)
 
-        circles = cv2.HoughCircles(
-            blurred,
-            cv2.HOUGH_GRADIENT,
-            dp=1.2,
-            minDist=min_dist,
-            param1=80,
-            param2=30,
-            minRadius=min_r,
-            maxRadius=max_r,
-        )
+        # Black circles are dark — Hough (Canny-based) fails because edges
+        # between near-black pixels are too faint.  Use contour fitting instead.
+        if color_name == "black":
+            found = _detect_by_contour(mask, w, h, min_r, max_r)
+        else:
+            found = _detect_by_hough(frame, mask, w, h, min_r, max_r)
 
-        if circles is None:
-            continue
-
-        circles = np.round(circles[0, :]).astype(int)
-        for cx_px, cy_px, r_px in circles:
+        for cx_px, cy_px, r_px in found:
             # Verify the detected circle area is actually within the mask
             circle_mask = np.zeros((h, w), dtype=np.uint8)
             cv2.circle(circle_mask, (cx_px, cy_px), r_px, 255, -1)
@@ -116,7 +176,6 @@ def detect_circles(frame: np.ndarray, cfg: dict[str, Any]) -> list[dict]:
                 np.count_nonzero(circle_mask), 1
             )
             if fill_ratio < 0.35:
-                # Circle area is less than 35% covered by the color mask - skip
                 continue
 
             results.append({

@@ -52,9 +52,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
             ]
         },
         "black": {
-            # Black: low value regardless of hue
+            # Black: low saturation AND low value (avoids dark-but-coloured shadows)
             "ranges": [
-                [0, 179, 0, 255, 0, 60]
+                [0, 179, 0, 60, 0, 60]
             ]
         }
     }
