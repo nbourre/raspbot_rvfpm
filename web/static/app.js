@@ -293,7 +293,7 @@ function gpLoop() {
   if (panChanged) {
     panSlider.value = gpPan;
     panValue.textContent = `${gpPan}deg`;
-    send({ type: "servo", axis: "pan", angle: 180 - gpPan });
+    send({ type: "servo", axis: "pan", angle: gpPan });
   }
 
   if (tiltChanged) {

@@ -25,6 +25,7 @@ TARGET_FPS = 10
 FRAME_INTERVAL = 1.0 / TARGET_FPS
 
 
+
 async def _mjpeg_generator() -> AsyncGenerator[bytes, None]:
     """Async generator that yields MJPEG frames from the camera."""
     cap = cv2.VideoCapture(0)
