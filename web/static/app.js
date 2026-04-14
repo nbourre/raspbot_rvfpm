@@ -282,11 +282,11 @@ function gpLoop() {
     tiltChanged = true;
   }
   if (btns[14] && btns[14].pressed) {
-    gpPan = clamp(gpPan + SERVO_NUDGE, 0, 180);
+    gpPan = clamp(gpPan - SERVO_NUDGE, 0, 180);
     panChanged = true;
   }
   if (btns[15] && btns[15].pressed) {
-    gpPan = clamp(gpPan - SERVO_NUDGE, 0, 180);
+    gpPan = clamp(gpPan + SERVO_NUDGE, 0, 180);
     panChanged = true;
   }
 
