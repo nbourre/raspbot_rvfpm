@@ -26,6 +26,7 @@ from fastapi.responses import JSONResponse, Response
 
 from web.game import config as gcfg
 from web.game import state as gstate
+from web.camera import camera
 
 router = APIRouter(prefix="/game", tags=["game"])
 
@@ -74,22 +75,7 @@ async def reset_game():
 
 @router.get("/detect")
 async def detect_once():
-    """Grab one frame from the camera and return all detected circles.
-
-    This endpoint is intended for the configuration panel to let the operator
-    verify that the HSV calibration is picking up circles correctly without
-    starting a full game session.
-
-    Returns
-    -------
-    {
-        "ok": true,
-        "detections": [
-            { "color": "red", "cx": 0.51, "cy": 0.49,
-              "radius_ratio": 0.22, "cx_px": 320, "cy_px": 240, "radius_px": 140 }
-        ]
-    }
-    """
+    """Grab one frame from the camera and return all detected circles."""
     import asyncio
     from web.game.detector import detect_circles
 
@@ -100,21 +86,7 @@ async def detect_once():
     except ImportError:
         return JSONResponse({"ok": False, "error": "cv2 not available", "detections": []})
 
-    # Run blocking camera grab in a thread so we don't block the event loop
-    def _grab():
-        cap = cv2.VideoCapture(0)
-        try:
-            if not cap.isOpened():
-                return None
-            # Discard a couple of stale buffered frames
-            for _ in range(3):
-                cap.grab()
-            ret, frame = cap.read()
-            return frame if ret else None
-        finally:
-            cap.release()
-
-    frame = await asyncio.to_thread(_grab)
+    frame = await asyncio.to_thread(camera.get_frame)
 
     if frame is None:
         return JSONResponse({"ok": False, "error": "Camera not available", "detections": []})
@@ -135,7 +107,6 @@ async def mask_preview(color: str = Query(..., description="Color name: red|gree
     Used by the config panel so the operator can visually verify HSV tuning.
     """
     import asyncio
-    import numpy as np
 
     cfg = gcfg.load()
 
@@ -148,21 +119,14 @@ async def mask_preview(color: str = Query(..., description="Color name: red|gree
     if color_def is None:
         raise HTTPException(status_code=400, detail=f"Unknown color: {color!r}")
 
-    def _grab_and_mask():
-        cap = cv2.VideoCapture(0)
-        try:
-            if not cap.isOpened():
-                return None
-            for _ in range(3):
-                cap.grab()
-            ret, frame = cap.read()
-            if not ret or frame is None:
-                return None
-        finally:
-            cap.release()
+    frame = camera.get_frame()
+    if frame is None:
+        raise HTTPException(status_code=503, detail="Camera not available")
 
-        h, w = frame.shape[:2]
-        hsv  = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    def _build_mask(frm):
+        import numpy as np
+        h, w = frm.shape[:2]
+        hsv  = cv2.cvtColor(frm, cv2.COLOR_BGR2HSV)
 
         ranges = color_def.get("ranges", [])
         mask   = np.zeros((h, w), dtype=np.uint8)
@@ -173,17 +137,10 @@ async def mask_preview(color: str = Query(..., description="Color name: red|gree
             hi    = np.array([rng[1], rng[3], rng[5]], dtype=np.uint8)
             mask |= cv2.inRange(hsv, lo, hi)
 
-        # Morphological cleanup (same as detector.py)
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         mask   = cv2.morphologyEx(mask, cv2.MORPH_OPEN,  kernel, iterations=2)
         mask   = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
 
-        # Build a 3-channel BGR image: white mask on original frame (tinted)
-        # Left half: original frame | Right half: mask as white-on-black
-        # Actually: return a side-by-side composite (original | mask)
-        mask_bgr = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-
-        # Colour-tint the mask image with the target colour for clarity
         TINT = {
             "red":   (0,   0,   255),
             "green": (0,   200, 0  ),
@@ -191,18 +148,15 @@ async def mask_preview(color: str = Query(..., description="Color name: red|gree
             "black": (180, 180, 180),
         }
         tint = TINT.get(color, (255, 255, 255))
-        colored_mask = np.zeros_like(frame)
+        colored_mask = np.zeros_like(frm)
         colored_mask[mask > 0] = tint
 
-        composite = np.hstack([frame, colored_mask])
+        composite = np.hstack([frm, colored_mask])
         _, jpeg = cv2.imencode(".jpg", composite, [cv2.IMWRITE_JPEG_QUALITY, 80])
         return jpeg.tobytes()
 
-    jpeg_bytes = await asyncio.to_thread(_grab_and_mask)
-
-    if jpeg_bytes is None:
-        raise HTTPException(status_code=503, detail="Camera not available")
-
+    import asyncio
+    jpeg_bytes = await asyncio.to_thread(_build_mask, frame)
     return Response(content=jpeg_bytes, media_type="image/jpeg")
 
 

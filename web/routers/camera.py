@@ -4,9 +4,9 @@ web/routers/camera.py
 ---------------------
 MJPEG streaming endpoint: GET /camera/stream
 
-Delivers a multipart/x-mixed-replace stream of JPEG frames captured from
-the Pi camera via OpenCV at approximately 10 FPS.  The stream is consumed
-directly by an <img> tag in the browser - no JavaScript needed for video.
+Delivers a multipart/x-mixed-replace stream of JPEG frames at approximately
+10 FPS.  Frames are read from the shared camera singleton (web.camera) so
+that /dev/video0 is opened only once regardless of how many consumers exist.
 """
 
 from __future__ import annotations
@@ -19,48 +19,40 @@ import cv2
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
+from web.camera import camera
+
 router = APIRouter()
 
-TARGET_FPS = 10
-FRAME_INTERVAL = 1.0 / TARGET_FPS
-
+TARGET_FPS      = 10
+FRAME_INTERVAL  = 1.0 / TARGET_FPS
 
 
 async def _mjpeg_generator() -> AsyncGenerator[bytes, None]:
-    """Async generator that yields MJPEG frames from the camera."""
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        # Yield a single error frame and stop.
-        yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n\r\n"
-        return
+    """Async generator that yields MJPEG frames from the shared camera."""
+    while True:
+        t0 = time.monotonic()
 
-    try:
-        while True:
-            t0 = time.monotonic()
+        frame = await asyncio.to_thread(camera.get_frame)
+        if frame is None:
+            await asyncio.sleep(FRAME_INTERVAL)
+            continue
 
-            ret, frame = cap.read()
-            if not ret:
-                await asyncio.sleep(FRAME_INTERVAL)
-                continue
+        ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+        if not ok:
+            await asyncio.sleep(FRAME_INTERVAL)
+            continue
 
-            ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
-            if not ok:
-                continue
+        yield (
+            b"--frame\r\n"
+            b"Content-Type: image/jpeg\r\n\r\n"
+            + buf.tobytes()
+            + b"\r\n"
+        )
 
-            yield (
-                b"--frame\r\n"
-                b"Content-Type: image/jpeg\r\n\r\n"
-                + buf.tobytes()
-                + b"\r\n"
-            )
-
-            # Throttle to TARGET_FPS
-            elapsed = time.monotonic() - t0
-            sleep_for = FRAME_INTERVAL - elapsed
-            if sleep_for > 0:
-                await asyncio.sleep(sleep_for)
-    finally:
-        cap.release()
+        elapsed   = time.monotonic() - t0
+        sleep_for = FRAME_INTERVAL - elapsed
+        if sleep_for > 0:
+            await asyncio.sleep(sleep_for)
 
 
 @router.get("/camera/stream")

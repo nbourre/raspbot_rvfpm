@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 import web.robot_state as state
+from web.camera import camera
 from web.routers import ws as ws_router
 from web.routers import camera as camera_router
 from web.routers import game as game_router
@@ -33,6 +34,7 @@ async def lifespan(app: FastAPI):
     try:
         state.robot = Robot()
         state.robot.__enter__()
+        camera.start()
         state.start_background_tasks()
     except Exception:
         if state.robot is not None:
@@ -42,6 +44,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown
     state.stop_background_tasks()
+    camera.stop()
     gstate.reset()
     state.robot.motors.stop()
     state.robot.leds.off_all()

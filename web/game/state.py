@@ -225,11 +225,7 @@ async def _game_loop() -> None:
     stop_index = 0
     start_time = time.monotonic()
 
-    try:
-        import cv2
-        cap = cv2.VideoCapture(0)
-    except Exception:
-        cap = None
+    from web.camera import camera as _camera
 
     try:
         while stop_index < num_stops:
@@ -249,10 +245,9 @@ async def _game_loop() -> None:
 
                 # Grab a frame
                 detections: list[dict] = []
-                if cap is not None and cap.isOpened():
-                    ret, frame = cap.read()
-                    if ret and frame is not None:
-                        detections = detect_circles(frame, cfg)
+                frame = _camera.get_frame()
+                if frame is not None:
+                    detections = detect_circles(frame, cfg)
 
                 target_color = sequence[stop_index]
                 circle, quality = best_match(
@@ -314,11 +309,6 @@ async def _game_loop() -> None:
     except asyncio.CancelledError:
         pass
     finally:
-        if cap is not None:
-            try:
-                cap.release()
-            except Exception:
-                pass
         if rs.robot is not None:
             try:
                 rs.robot.leds.off_all()
