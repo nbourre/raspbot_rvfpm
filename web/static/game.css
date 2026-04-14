@@ -113,48 +113,6 @@
 }
 #btn-game-reset:hover { background: #2d1a40; }
 
-/* -- Config panel --------------------------------------------------------- */
-#config-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-#config-toggle {
-  width: 100%;
-  padding: 0.65rem 1rem;
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  text-align: left;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: color 80ms;
-}
-#config-toggle:hover { color: var(--text); }
-
-#config-toggle .arrow {
-  transition: transform 200ms;
-  display: inline-block;
-}
-#config-panel.open #config-toggle .arrow { transform: rotate(180deg); }
-
-#config-body {
-  display: none;
-  padding: 0.75rem 1rem 1rem;
-  flex-direction: column;
-  gap: 1rem;
-  border-top: 1px solid var(--border);
-}
-#config-panel.open #config-body { display: flex; }
-
 .config-section-title {
   font-size: 0.72rem;
   text-transform: uppercase;

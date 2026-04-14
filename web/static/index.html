@@ -68,48 +68,49 @@
       </div>
     </section>
 
-    <!-- Right column: drive pad -->
-    <section class="panel panel-drive">
-      <h2>Drive</h2>
-      <div class="dpad">
-        <button class="dpad-btn" data-dir="diagonal_forward_left"   title="Forward-Left">&#8598;</button>
-        <button class="dpad-btn" data-dir="forward"                  title="Forward (W)">&#8593;</button>
-        <button class="dpad-btn" data-dir="diagonal_forward_right"  title="Forward-Right">&#8599;</button>
+    <!-- Right column: tabbed panel (Drive / Config) -->
+    <section class="panel panel-right">
 
-        <button class="dpad-btn" data-dir="strafe_left"             title="Strafe Left (A)">&#8592;</button>
-        <button class="dpad-btn dpad-stop" data-dir="stop"          title="Stop">&#9632;</button>
-        <button class="dpad-btn" data-dir="strafe_right"            title="Strafe Right (D)">&#8594;</button>
-
-        <button class="dpad-btn" data-dir="diagonal_backward_left"  title="Backward-Left">&#8601;</button>
-        <button class="dpad-btn" data-dir="backward"                 title="Backward (S)">&#8595;</button>
-        <button class="dpad-btn" data-dir="diagonal_backward_right" title="Backward-Right">&#8600;</button>
+      <!-- Tab bar -->
+      <div class="tab-bar" role="tablist">
+        <button class="tab-btn active" data-tab="drive"  role="tab" aria-selected="true">Drive</button>
+        <button class="tab-btn"        data-tab="config" role="tab" aria-selected="false">Config</button>
       </div>
 
-      <div class="spin-row">
-        <button class="spin-btn" data-dir="turn_left"  title="Spin Left (Q)">&#8634;</button>
-        <button class="spin-btn" data-dir="turn_right" title="Spin Right (E)">&#8635;</button>
+      <!-- Drive tab -->
+      <div id="tab-drive" class="tab-pane active" role="tabpanel">
+        <div class="dpad">
+          <button class="dpad-btn" data-dir="diagonal_forward_left"   title="Forward-Left">&#8598;</button>
+          <button class="dpad-btn" data-dir="forward"                  title="Forward (W)">&#8593;</button>
+          <button class="dpad-btn" data-dir="diagonal_forward_right"  title="Forward-Right">&#8599;</button>
+
+          <button class="dpad-btn" data-dir="strafe_left"             title="Strafe Left (A)">&#8592;</button>
+          <button class="dpad-btn dpad-stop" data-dir="stop"          title="Stop">&#9632;</button>
+          <button class="dpad-btn" data-dir="strafe_right"            title="Strafe Right (D)">&#8594;</button>
+
+          <button class="dpad-btn" data-dir="diagonal_backward_left"  title="Backward-Left">&#8601;</button>
+          <button class="dpad-btn" data-dir="backward"                 title="Backward (S)">&#8595;</button>
+          <button class="dpad-btn" data-dir="diagonal_backward_right" title="Backward-Right">&#8600;</button>
+        </div>
+
+        <div class="spin-row">
+          <button class="spin-btn" data-dir="turn_left"  title="Spin Left (Q)">&#8634;</button>
+          <button class="spin-btn" data-dir="turn_right" title="Spin Right (E)">&#8635;</button>
+        </div>
+
+        <p class="hint">
+          Hold to drive &bull; Release to stop<br/>
+          WASD / arrows &bull; Q/E to spin<br/>
+          Gamepad: L-stick=drive &bull; R-stick=spin &bull; D-pad=camera<br/>
+          <strong>RB hold 3s = start game</strong>
+        </p>
       </div>
 
-      <p class="hint">
-        Hold to drive &bull; Release to stop<br/>
-        WASD / arrows &bull; Q/E to spin<br/>
-        Gamepad: L-stick=drive &bull; R-stick=spin &bull; D-pad=camera<br/>
-        <strong>RB hold 3s = start game</strong>
-      </p>
-    </section>
-  </main>
-
-  <!-- Config panel (full width, below main columns) -->
-  <div style="padding: 0 1rem 1rem;">
-    <div id="config-panel">
-      <button id="config-toggle">
-        Configuration
-        <span class="arrow">&#9660;</span>
-      </button>
-      <div id="config-body">
+      <!-- Config tab -->
+      <div id="tab-config" class="tab-pane" role="tabpanel">
 
         <!-- Gameplay parameters -->
-        <div>
+        <div class="config-section">
           <div class="config-section-title">Gameplay</div>
 
           <div class="config-row">
@@ -156,7 +157,7 @@
         </div>
 
         <!-- HSV color calibration -->
-        <div>
+        <div class="config-section">
           <div class="config-section-title">Color Calibration (HSV)</div>
 
           <!-- Detection test mode -->
@@ -217,9 +218,9 @@
           <button class="btn-save" id="btn-save-config">Save</button>
         </div>
 
-      </div><!-- #config-body -->
-    </div><!-- #config-panel -->
-  </div>
+      </div><!-- #tab-config -->
+    </section><!-- .panel-right -->
+  </main>
 
   <!-- Leaderboard modal -->
   <div id="lb-overlay">

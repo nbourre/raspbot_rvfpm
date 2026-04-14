@@ -42,10 +42,10 @@ const hudHold      = document.getElementById("hud-hold");
 const gameStatusEl = document.getElementById("game-status");
 const btnGameReset = document.getElementById("btn-game-reset");
 
-// Config panel
-const configPanel  = document.getElementById("config-panel");
-const configToggle = document.getElementById("config-toggle");
-const configBody   = document.getElementById("config-body");
+// Config panel (now a tab — these refs kept for compat but panel/toggle no longer exist)
+const configPanel  = document.getElementById("tab-config");
+const configToggle = null;
+const configBody   = configPanel;
 
 // Leaderboard modal
 const lbOverlay    = document.getElementById("lb-overlay");
@@ -526,15 +526,38 @@ if (btnSaveCfg) {
   });
 }
 
-// Config panel toggle
-if (configToggle) {
-  configToggle.addEventListener("click", () => {
-    const isOpen = configPanel.classList.toggle("open");
-    if (isOpen && Object.keys(cfgData).length === 0) {
-      loadConfig();
+// ---------------------------------------------------------------------------
+// Tab bar switching (Drive / Config)
+// ---------------------------------------------------------------------------
+
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const targetTab = btn.dataset.tab;
+
+    // Update button active state
+    document.querySelectorAll(".tab-btn").forEach(b => {
+      b.classList.toggle("active", b.dataset.tab === targetTab);
+      b.setAttribute("aria-selected", b.dataset.tab === targetTab ? "true" : "false");
+    });
+
+    // Update pane active state
+    document.querySelectorAll(".tab-pane").forEach(pane => {
+      pane.classList.toggle("active", pane.id === `tab-${targetTab}`);
+    });
+
+    if (targetTab === "config") {
+      // Load config the first time the Config tab is opened
+      if (Object.keys(cfgData).length === 0) {
+        loadConfig();
+      }
+    } else {
+      // Leaving Config tab: stop detect test + mask preview
+      if (detectTestActive) {
+        stopDetectTest();
+      }
     }
   });
-}
+});
 
 // ---------------------------------------------------------------------------
 // HSV calibration tabs
@@ -815,15 +838,6 @@ if (btnDetectTest) {
       startDetectTest();
     }
   });
-}
-
-// Stop detect test when config panel is closed
-if (configToggle) {
-  configToggle.addEventListener("click", () => {
-    if (detectTestActive && !configPanel.classList.contains("open")) {
-      stopDetectTest();
-    }
-  }, true);  // capture: fires before the toggle listener in the main handler
 }
 
 // Expose for external use
