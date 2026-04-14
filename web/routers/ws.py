@@ -5,8 +5,8 @@ web/routers/ws.py
 WebSocket endpoint /ws
 
 Handles bidirectional real-time communication:
-  Client -> Server : drive commands, servo commands
-  Server -> Client : distance sensor readings (pushed by robot_state background task)
+  Client -> Server : drive commands, servo commands, game control
+  Server -> Client : distance sensor readings, game state/frame updates
 
 Message schemas
 ---------------
@@ -25,6 +25,10 @@ Drive raw (used by gamepad cartesian mixing):
 
 Servo:
   { "type": "servo", "axis": "pan" | "tilt", "angle": <int 0-180> }
+
+Game control:
+  { "type": "game_start" }   - start the parking challenge game
+  { "type": "game_reset" }   - abort game, return to IDLE
 """
 
 from __future__ import annotations
@@ -116,6 +120,18 @@ def _handle_servo(data: dict) -> None:
         state.robot.servos.tilt.set_angle(angle)
 
 
+def _handle_game_start() -> None:
+    """Launch the parking challenge game."""
+    if state.game is not None:
+        state.game.start()
+
+
+def _handle_game_reset() -> None:
+    """Abort any running game and return to IDLE."""
+    if state.game is not None:
+        state.game.reset()
+
+
 @router.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket) -> None:
     await ws.accept()
@@ -135,6 +151,10 @@ async def websocket_endpoint(ws: WebSocket) -> None:
                 _handle_drive_raw(data)
             elif msg_type == "servo":
                 _handle_servo(data)
+            elif msg_type == "game_start":
+                _handle_game_start()
+            elif msg_type == "game_reset":
+                _handle_game_reset()
     except WebSocketDisconnect:
         pass
     finally:

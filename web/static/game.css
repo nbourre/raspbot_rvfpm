@@ -1,0 +1,398 @@
+/* ==========================================================================
+   game.css  --  Parking Challenge game mode styles
+   ========================================================================== */
+
+/* -- Game status bar in header ------------------------------------------- */
+.game-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status.game-idle        { background: #1e1e2e; color: #7a859e; }
+.status.game-countdown   { background: #2a2a10; color: #facc15; }
+.status.game-targeting   { background: #1a2a3a; color: #4ab8ff; }
+.status.game-holding     { background: #0d2a0d; color: #4caf50; }
+.status.game-finished    { background: #2a1a3a; color: #c084fc; }
+
+/* -- Camera overlay wrapper ---------------------------------------------- */
+.camera-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+.camera-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+#game-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* -- Game HUD (overlaid on camera, top strip) ----------------------------- */
+#game-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  z-index: 10;
+}
+
+#game-hud.visible { display: flex; }
+
+#hud-stop    { color: #e2e8f0; }
+#hud-timer   { font-variant-numeric: tabular-nums; color: #facc15; }
+#hud-target  { display: flex; align-items: center; gap: 0.4rem; }
+
+.target-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.5);
+  display: inline-block;
+}
+
+/* -- Hold progress arc caption ------------------------------------------- */
+#hud-hold {
+  font-size: 0.72rem;
+  color: #4caf50;
+  display: none;
+}
+#hud-hold.visible { display: block; }
+
+/* -- Game panel (below camera in left column) ----------------------------- */
+#game-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.game-panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.game-hint {
+  font-size: 0.72rem;
+  color: #7a859e;
+  line-height: 1.5;
+}
+
+#btn-game-reset {
+  padding: 0.35rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid #3a2a4a;
+  background: #1e1028;
+  color: #c084fc;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 80ms;
+}
+#btn-game-reset:hover { background: #2d1a40; }
+
+/* -- Config panel --------------------------------------------------------- */
+#config-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+#config-toggle {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: color 80ms;
+}
+#config-toggle:hover { color: var(--text); }
+
+#config-toggle .arrow {
+  transition: transform 200ms;
+  display: inline-block;
+}
+#config-panel.open #config-toggle .arrow { transform: rotate(180deg); }
+
+#config-body {
+  display: none;
+  padding: 0.75rem 1rem 1rem;
+  flex-direction: column;
+  gap: 1rem;
+  border-top: 1px solid var(--border);
+}
+#config-panel.open #config-body { display: flex; }
+
+.config-section-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.config-row {
+  display: grid;
+  grid-template-columns: 10rem 1fr 3.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.config-row input[type="range"] { width: 100%; }
+.config-row input[type="number"] {
+  width: 4rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+/* HSV calibration color tabs */
+.hsv-tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.hsv-tab {
+  padding: 0.2rem 0.7rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 80ms, color 80ms;
+}
+.hsv-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.hsv-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.hsv-row {
+  display: grid;
+  grid-template-columns: 3rem 1fr 2.5rem 1fr 2.5rem;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.hsv-preview {
+  width: 100%;
+  height: 80px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #000;
+  margin-top: 0.5rem;
+  object-fit: cover;
+  display: block;
+}
+
+.config-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.btn-save {
+  padding: 0.4rem 1.1rem;
+  border-radius: 6px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 80ms;
+}
+.btn-save:hover { opacity: 0.85; }
+
+.btn-secondary {
+  padding: 0.4rem 1.1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: color 80ms;
+}
+.btn-secondary:hover { color: var(--text); }
+
+/* -- Leaderboard modal ---------------------------------------------------- */
+#lb-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+#lb-overlay.visible { display: flex; }
+
+#lb-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: min(480px, 92vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+#lb-modal h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+}
+
+/* Score entry form */
+#lb-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+#lb-form label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+#lb-form input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.9rem;
+}
+
+#lb-score-display {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #facc15;
+}
+
+#lb-submit {
+  padding: 0.55rem;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 80ms;
+}
+#lb-submit:hover { opacity: 0.85; }
+
+/* Leaderboard table */
+#lb-table-wrap { overflow-x: auto; }
+
+#lb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+#lb-table th {
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 0.7rem;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+#lb-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid rgba(46,51,71,0.5);
+}
+
+#lb-table tr.me td { color: #facc15; font-weight: 600; }
+
+#lb-table .rank { color: var(--muted); width: 2rem; }
+
+.lb-close-row {
+  display: flex;
+  justify-content: center;
+}
+
+#lb-close {
+  padding: 0.4rem 1.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: color 80ms;
+}
+#lb-close:hover { color: var(--text); }
+
+/* Sequence replay strip at bottom of leaderboard modal */
+#lb-sequence {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.seq-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+}

@@ -72,6 +72,10 @@ function connect() {
       const data = JSON.parse(evt.data);
       if (data.type === "distance") {
         distanceEl.textContent = `${data.value} cm`;
+      } else if (data.type === "game_state" || data.type === "game_frame") {
+        if (typeof window.handleGameMessage === "function") {
+          window.handleGameMessage(data);
+        }
       }
     } catch (_) { /* ignore malformed frames */ }
   });
@@ -282,11 +286,11 @@ function gpLoop() {
     tiltChanged = true;
   }
   if (btns[14] && btns[14].pressed) {
-    gpPan = clamp(gpPan - SERVO_NUDGE, 0, 180);
+    gpPan = clamp(gpPan + SERVO_NUDGE, 0, 180);
     panChanged = true;
   }
   if (btns[15] && btns[15].pressed) {
-    gpPan = clamp(gpPan + SERVO_NUDGE, 0, 180);
+    gpPan = clamp(gpPan - SERVO_NUDGE, 0, 180);
     panChanged = true;
   }
 
@@ -300,6 +304,12 @@ function gpLoop() {
     tiltSlider.value = gpTilt;
     tiltValue.textContent = `${gpTilt}deg`;
     send({ type: "servo", axis: "tilt", angle: gpTilt });
+  }
+
+  // ---- RB hold-to-start game (button 5 = RB in standard mapping) ----------
+  const rbPressed = !!(btns[5] && btns[5].pressed);
+  if (typeof window.updateRbHold === "function") {
+    window.updateRbHold(rbPressed);
   }
 
   gpRafId = requestAnimationFrame(gpLoop);

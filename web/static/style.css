@@ -84,14 +84,17 @@ main {
 .panel-drive  { flex: 1 1 260px; align-items: center; }
 
 /* -- Camera feed ------------------------------------------------- */
+.camera-wrap,
 .camera-frame {
   width: 100%;
   border-radius: 8px;
   overflow: hidden;
   background: #000;
   aspect-ratio: 4/3;
+  position: relative;
 }
 
+.camera-wrap img,
 .camera-frame img {
   width: 100%;
   height: 100%;

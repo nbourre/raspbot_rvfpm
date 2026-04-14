@@ -21,6 +21,10 @@ robot = None
 # All currently connected WebSocket clients.
 connections: Set[WebSocket] = set()
 
+# Game module reference (imported lazily to avoid circular imports at module load).
+# Accessed as:  import web.robot_state as state; state.game.start()
+game = None
+
 # Background sensor task handle.
 _sensor_task: asyncio.Task | None = None
 

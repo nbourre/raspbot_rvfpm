@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse
 import web.robot_state as state
 from web.routers import ws as ws_router
 from web.routers import camera as camera_router
+from web.routers import game as game_router
 
 
 @asynccontextmanager
@@ -24,6 +25,10 @@ async def lifespan(app: FastAPI):
     """Create the Robot on startup; tear it down on shutdown."""
     import sys
     from raspbot import Robot
+    from web.game import state as gstate
+
+    # Make game state module accessible via robot_state
+    state.game = gstate
 
     try:
         state.robot = Robot()
@@ -37,6 +42,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown
     state.stop_background_tasks()
+    gstate.reset()
     state.robot.motors.stop()
     state.robot.leds.off_all()
     state.robot.__exit__(None, None, None)
@@ -48,6 +54,7 @@ app = FastAPI(title="Raspbot RVFPM Controller", lifespan=lifespan)
 # Routers
 app.include_router(ws_router.router)
 app.include_router(camera_router.router)
+app.include_router(game_router.router)
 
 # Static files (HTML / CSS / JS)
 STATIC_DIR = Path(__file__).parent / "static"
