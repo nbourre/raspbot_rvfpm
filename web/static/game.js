@@ -584,6 +584,98 @@ document.querySelectorAll(".hsv-tab").forEach(tab => {
 });
 
 // ---------------------------------------------------------------------------
+// HSV mask preview
+// ---------------------------------------------------------------------------
+
+const maskPreviewWrap = document.getElementById("mask-preview-wrap");
+const maskPreviewImg  = document.getElementById("mask-preview-img");
+const btnMaskRefresh  = document.getElementById("btn-mask-refresh");
+
+let maskRefreshTimer  = null;   // debounce timer
+
+/**
+ * Fetch and display the mask preview for the currently active HSV color.
+ * Saves the current slider values to the server first so the preview reflects
+ * whatever the sliders currently say (even before clicking Save).
+ */
+async function refreshMaskPreview() {
+  if (!maskPreviewWrap || !maskPreviewImg) return;
+  if (maskPreviewWrap.style.display === "none") return;
+
+  // Push current slider values to the server (temp save) before fetching mask
+  await pushHsvToServer();
+
+  // Bust cache with timestamp so the browser doesn't reuse a stale image
+  maskPreviewImg.src = `/game/mask?color=${encodeURIComponent(activeHsvColor)}&t=${Date.now()}`;
+}
+
+/**
+ * Write only the HSV values for the active color to the server without
+ * touching gameplay params.  This is a lightweight partial save used by the
+ * mask preview so results are always in sync with the sliders.
+ */
+async function pushHsvToServer() {
+  if (!cfgData || !cfgData.colors) return;
+  const ranges = readHsvSliders(activeHsvColor);
+  const patch  = {
+    ...cfgData,
+    colors: {
+      ...cfgData.colors,
+      [activeHsvColor]: { ranges },
+    },
+  };
+  try {
+    await fetch("/game/config", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify(patch),
+    });
+    // Update local mirror so subsequent saves include these values
+    cfgData = patch;
+  } catch (_) {}
+}
+
+function scheduleMaskRefresh(delayMs = 600) {
+  if (maskRefreshTimer !== null) clearTimeout(maskRefreshTimer);
+  maskRefreshTimer = setTimeout(() => {
+    maskRefreshTimer = null;
+    refreshMaskPreview();
+  }, delayMs);
+}
+
+// Show/hide the mask preview section when detect test is toggled
+function setMaskPreviewVisible(visible) {
+  if (!maskPreviewWrap) return;
+  maskPreviewWrap.style.display = visible ? "" : "none";
+  if (visible) refreshMaskPreview();
+}
+
+// Manual refresh button
+if (btnMaskRefresh) {
+  btnMaskRefresh.addEventListener("click", () => refreshMaskPreview());
+}
+
+// Auto-refresh on any HSV slider change (debounced)
+document.querySelectorAll("#hsv-h-min,#hsv-h-max,#hsv-s-min,#hsv-s-max,#hsv-v-min,#hsv-v-max")
+  .forEach(slider => {
+    slider.addEventListener("input", () => {
+      if (maskPreviewWrap && maskPreviewWrap.style.display !== "none") {
+        scheduleMaskRefresh(500);
+      }
+    });
+  });
+
+// Refresh mask when switching color tabs (if preview is visible)
+// This is patched into the existing tab click handler via a second listener.
+document.querySelectorAll(".hsv-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    if (maskPreviewWrap && maskPreviewWrap.style.display !== "none") {
+      scheduleMaskRefresh(200);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Detection test mode
 // ---------------------------------------------------------------------------
 
@@ -669,6 +761,7 @@ function startDetectTest() {
   btnDetectTest.textContent = "Stop Test";
   // Show canvas even in IDLE
   if (gameCanvas) gameCanvas.style.display = "block";
+  setMaskPreviewVisible(true);
   pollDetect();
   detectTestTimer = setInterval(pollDetect, 200);
 }
@@ -683,6 +776,7 @@ function stopDetectTest() {
   clearDetectBadges();
   btnDetectTest.classList.remove("active");
   btnDetectTest.textContent = "Test Detection";
+  setMaskPreviewVisible(false);
   // Clear canvas
   if (ctx) ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
 }

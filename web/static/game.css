@@ -453,3 +453,35 @@
   border-radius: 50%;
   border: 2px solid rgba(255,255,255,0.3);
 }
+
+/* -- HSV mask preview ---------------------------------------------------- */
+#mask-preview-wrap {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mask-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.mask-preview-hint {
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-style: italic;
+  flex: 1;
+}
+
+.mask-preview-img {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #000;
+  display: block;
+  max-height: 220px;
+  object-fit: contain;
+}
