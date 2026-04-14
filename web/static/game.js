@@ -623,7 +623,10 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
       pane.classList.toggle("active", pane.id === `tab-${targetTab}`);
     });
 
-    if (targetTab === "config") {
+    if (targetTab === "lb") {
+      // Always refresh when switching to the leaderboard tab
+      refreshInlineLeaderboard();
+    } else if (targetTab === "config") {
       // Load config the first time the Config tab is opened
       if (Object.keys(cfgData).length === 0) {
         loadConfig();
@@ -1033,6 +1036,7 @@ if (lbSubmit) {
       lbSubmit.disabled    = true;
       lbSubmit.textContent = `Sauvegard\u00e9\u00a0! Rang #${result.rank}`;
       await refreshLeaderboard(lastScore.elapsed_ms);
+      await refreshInlineLeaderboard(lastScore.elapsed_ms);
 
       // Persist in localStorage for reference
       try {
@@ -1051,6 +1055,8 @@ if (lbSubmit) {
 if (lbClose) {
   lbClose.addEventListener("click", () => {
     lbOverlay.classList.remove("visible");
+    // Sync inline leaderboard in case entries were deleted inside the modal
+    refreshInlineLeaderboard();
     // Reset submit button for next game
     if (lbSubmit) {
       lbSubmit.disabled    = false;
@@ -1065,8 +1071,73 @@ if (lbClose) {
 }
 
 // ---------------------------------------------------------------------------
+// Tab leaderboard (tab-lb)
+// ---------------------------------------------------------------------------
+
+const tabLbTbody  = document.getElementById("tab-lb-tbody");
+const tabLbEmpty  = document.getElementById("tab-lb-empty");
+const btnTabLbRefresh = document.getElementById("btn-tab-lb-refresh");
+
+async function refreshInlineLeaderboard(highlightMs) {
+  try {
+    const res     = await fetch("/game/leaderboard");
+    const entries = await res.json();
+    renderInlineLeaderboard(entries, highlightMs);
+  } catch (e) {
+    // silently ignore
+  }
+}
+
+function renderInlineLeaderboard(entries, highlightMs) {
+  if (!tabLbTbody) return;
+  tabLbTbody.innerHTML = "";
+
+  const top = entries.slice(0, 10);
+  if (top.length === 0) {
+    if (tabLbEmpty) tabLbEmpty.style.display = "block";
+    return;
+  }
+  if (tabLbEmpty) tabLbEmpty.style.display = "none";
+
+  top.forEach((e, i) => {
+    const tr = document.createElement("tr");
+    if (highlightMs !== undefined && e.elapsed_ms === highlightMs) {
+      tr.className = "me";
+    }
+    const delBtn = `<button class="lb-del-btn" title="Supprimer" data-idx="${i}">&times;</button>`;
+    tr.innerHTML = `
+      <td class="rank">#${i + 1}</td>
+      <td>${escHtml(e.name)}</td>
+      <td>${escHtml(e.school)}</td>
+      <td style="font-variant-numeric:tabular-nums">${(e.elapsed_ms / 1000).toFixed(2)}s</td>
+      <td class="lb-del-cell">${delBtn}</td>
+    `;
+    tabLbTbody.appendChild(tr);
+  });
+
+  tabLbTbody.querySelectorAll(".lb-del-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      try {
+        await fetch(`/game/leaderboard/${idx}`, { method: "DELETE" });
+        await refreshInlineLeaderboard(highlightMs);
+      } catch (e) {
+        alert("Impossible de supprimer l\u2019entr\u00e9e\u00a0: " + e.message);
+      }
+    });
+  });
+}
+
+if (btnTabLbRefresh) {
+  btnTabLbRefresh.addEventListener("click", () => refreshInlineLeaderboard());
+}
+
+// ---------------------------------------------------------------------------
 // Init on load
 // ---------------------------------------------------------------------------
 
 // Pre-load config silently so sliders are ready when panel opens
 loadConfig();
+
+// Load leaderboard on startup (it is the default active tab)
+refreshInlineLeaderboard();

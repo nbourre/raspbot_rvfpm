@@ -448,6 +448,62 @@
   border: 2px solid rgba(255,255,255,0.3);
 }
 
+/* -- Leaderboard tab (tab-lb) -------------------------------------------- */
+#tab-lb {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+}
+
+.tab-lb-header {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+#tab-lb-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+#tab-lb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+#tab-lb-table th {
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 0.68rem;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+}
+
+#tab-lb-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid rgba(46,51,71,0.4);
+}
+
+#tab-lb-table .rank { color: var(--muted); width: 1.8rem; }
+#tab-lb-table tr.me td { color: #facc15; font-weight: 600; }
+
+.tab-lb-empty {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+  padding: 1.2rem 0;
+  margin: 0;
+}
+
 /* -- HSV mask preview ---------------------------------------------------- */
 #mask-preview-wrap {
   margin-top: 0.6rem;
