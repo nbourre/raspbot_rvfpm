@@ -8,6 +8,8 @@ Run with:
 """
 
 from contextlib import asynccontextmanager
+import asyncio
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -20,6 +22,8 @@ from web.routers import ws as ws_router
 from web.routers import camera as camera_router
 from web.routers import game as game_router
 
+log = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,10 +35,21 @@ async def lifespan(app: FastAPI):
     # Make game state module accessible via robot_state
     state.game = gstate
 
+    # Start camera first — independent of robot hardware
+    camera.start()
+    # Give the capture thread up to 3 s to grab its first frame
+    for _ in range(30):
+        if camera.get_frame() is not None:
+            break
+        await asyncio.sleep(0.1)
+    if camera.get_frame() is None:
+        log.warning("Camera did not produce a frame within 3 s — check /dev/video*")
+    else:
+        log.info("Camera ready.")
+
     try:
         state.robot = Robot()
         state.robot.__enter__()
-        camera.start()
         state.start_background_tasks()
     except Exception:
         if state.robot is not None:
