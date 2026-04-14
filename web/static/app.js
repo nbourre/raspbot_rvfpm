@@ -145,8 +145,15 @@ const KEY_MAP = {
   e: "turn_right",
 };
 
+// Returns true when the leaderboard modal is open (keyboard drive must be suppressed)
+function isModalOpen() {
+  const lb = document.getElementById("lb-overlay");
+  return lb && lb.classList.contains("visible");
+}
+
 window.addEventListener("keydown", (evt) => {
   if (evt.repeat) return;
+  if (isModalOpen()) return;
   const dir = KEY_MAP[evt.key];
   if (dir) {
     evt.preventDefault();
@@ -158,6 +165,12 @@ window.addEventListener("keydown", (evt) => {
 });
 
 window.addEventListener("keyup", (evt) => {
+  if (isModalOpen()) {
+    // Ensure motors stop if modal opened while a key was held
+    stopDrive();
+    driveButtons.forEach((b) => b.classList.remove("pressed"));
+    return;
+  }
   const dir = KEY_MAP[evt.key];
   if (dir) {
     driveButtons.forEach((b) => {
