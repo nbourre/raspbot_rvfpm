@@ -27,6 +27,10 @@ const SPEED_THRESHOLD = 5;      // min motor speed change to re-send drive_raw
 const SERVO_NUDGE     = 2;      // degrees per rAF frame for d-pad servo control
 const WS_RECONNECT_DELAY_MS = 2000;
 
+// Slow mode: Button A toggles; speed is multiplied by this ratio when active.
+// Configurable here — lower = slower.
+const SLOW_RATIO = 0.35;
+
 // -- DOM refs ----------------------------------------------------------------
 const statusEl    = document.getElementById("ws-status");
 const gpStatusEl  = document.getElementById("gp-status");
@@ -184,6 +188,11 @@ tiltSlider.addEventListener("input", () => {
 let gpIndex   = null;   // index of the connected gamepad, null if none
 let gpRafId   = null;   // requestAnimationFrame handle
 
+// Slow mode (toggled by Button A)
+let slowMode    = false;
+let btnAWasDown = false;   // edge detection: only toggle on press, not hold
+let gpLBWasDown = false;   // edge detection for LB skip
+
 // Last sent motor speeds (to detect meaningful changes)
 let gpLastL1 = 0, gpLastL2 = 0, gpLastR1 = 0, gpLastR2 = 0;
 
@@ -259,8 +268,10 @@ function gpLoop() {
       sendGpStop();
     }
   } else {
-    // Normalize so the largest value maps to MAX_SPEED, preserve ratios
-    const scale = MAX_SPEED / Math.max(1.0, maxVal);
+    // Normalize so the largest value maps to MAX_SPEED, preserve ratios.
+    // Apply slow mode ratio if active.
+    const speedCap = MAX_SPEED * (slowMode ? SLOW_RATIO : 1.0);
+    const scale = speedCap / Math.max(1.0, maxVal);
     const l1 = clamp(Math.round(fl * scale), -255, 255);
     const l2 = clamp(Math.round(rl * scale), -255, 255);
     const r1 = clamp(Math.round(fr * scale), -255, 255);
@@ -305,6 +316,28 @@ function gpLoop() {
     tiltValue.textContent = `${gpTilt}deg`;
     send({ type: "servo", axis: "tilt", angle: gpTilt });
   }
+
+  // ---- Button A (index 0): toggle slow mode --------------------------------
+  const btnADown = !!(btns[0] && btns[0].pressed);
+  if (btnADown && !btnAWasDown) {
+    slowMode = !slowMode;
+    if (typeof window.onSlowModeChange === "function") {
+      window.onSlowModeChange(slowMode);
+    }
+    // Force re-send on next move so new speed takes effect immediately
+    gpLastL1 = -9999;
+  }
+  btnAWasDown = btnADown;
+
+  // ---- LB (button 4): skip current color -----------------------------------
+  // Edge-detect so one press = one skip
+  const btnLBDown = !!(btns[4] && btns[4].pressed);
+  if (btnLBDown && !gpLBWasDown) {
+    if (typeof window.onLBPress === "function") {
+      window.onLBPress();
+    }
+  }
+  gpLBWasDown = btnLBDown;
 
   // ---- RB hold-to-start game (button 5 = RB in standard mapping) ----------
   const rbPressed = !!(btns[5] && btns[5].pressed);

@@ -132,6 +132,12 @@ def _handle_game_reset() -> None:
         state.game.reset()
 
 
+def _handle_game_skip() -> None:
+    """Skip the current target color and advance to the next stop."""
+    if state.game is not None:
+        state.game.skip_stop()
+
+
 @router.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket) -> None:
     await ws.accept()
@@ -155,6 +161,8 @@ async def websocket_endpoint(ws: WebSocket) -> None:
                 _handle_game_start()
             elif msg_type == "game_reset":
                 _handle_game_reset()
+            elif msg_type == "game_skip":
+                _handle_game_skip()
     except WebSocketDisconnect:
         pass
     finally:

@@ -443,6 +443,31 @@ function updateRbHint(progress) {
 window.updateRbHold = updateRbHold;
 
 // ---------------------------------------------------------------------------
+// Slow mode overlay (toggled by Button A via app.js)
+// ---------------------------------------------------------------------------
+
+function onSlowModeChange(active) {
+  const el = document.getElementById("slow-mode-overlay");
+  if (el) el.classList.toggle("visible", active);
+}
+
+// Expose for app.js
+window.onSlowModeChange = onSlowModeChange;
+
+// ---------------------------------------------------------------------------
+// LB (Left Bumper) — skip current color (only during TARGETING / HOLDING)
+// ---------------------------------------------------------------------------
+
+function onLBPress() {
+  if (gamePhase === "TARGETING" || gamePhase === "HOLDING") {
+    send({ type: "game_skip" });
+  }
+}
+
+// Expose for app.js
+window.onLBPress = onLBPress;
+
+// ---------------------------------------------------------------------------
 // Config panel
 // ---------------------------------------------------------------------------
 
@@ -890,13 +915,28 @@ function renderLeaderboard(entries, highlightMs) {
     if (highlightMs !== undefined && e.elapsed_ms === highlightMs) {
       tr.className = "me";
     }
+    const delBtn = `<button class="lb-del-btn" title="Delete entry" data-idx="${i}">&times;</button>`;
     tr.innerHTML = `
       <td class="rank">#${i + 1}</td>
       <td>${escHtml(e.name)}</td>
       <td>${escHtml(e.school)}</td>
       <td>${(e.elapsed_ms / 1000).toFixed(2)}s</td>
+      <td class="lb-del-cell">${delBtn}</td>
     `;
     lbTableBody.appendChild(tr);
+  });
+
+  // Bind delete buttons
+  lbTableBody.querySelectorAll(".lb-del-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      try {
+        await fetch(`/game/leaderboard/${idx}`, { method: "DELETE" });
+        await refreshLeaderboard(highlightMs);
+      } catch(e) {
+        alert("Failed to delete entry: " + e.message);
+      }
+    });
   });
 }
 
@@ -918,6 +958,10 @@ if (lbSubmit) {
     const school = schoolEl.value.trim();
     if (!name || !school) {
       alert("Please enter your name and school.");
+      return;
+    }
+    if (name.toLowerCase() === "test") {
+      alert("Nice try. Enter a real name.");
       return;
     }
     try {

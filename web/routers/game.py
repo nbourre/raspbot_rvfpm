@@ -209,9 +209,12 @@ async def add_leaderboard_entry(body: dict):
             status_code=422,
             detail=f"Missing fields: {', '.join(missing)}"
         )
+    name = str(body["name"]).strip()
+    if name.lower() == "test":
+        raise HTTPException(status_code=422, detail="Name 'test' is not allowed.")
     entries = _load_leaderboard()
     entries.append({
-        "name":       str(body["name"])[:64],
+        "name":       name[:64],
         "school":     str(body["school"])[:64],
         "elapsed_ms": int(body["elapsed_ms"]),
         "stops":      int(body.get("stops", 0)),
@@ -221,7 +224,7 @@ async def add_leaderboard_entry(body: dict):
     _save_leaderboard(entries)
     return {"ok": True, "rank": entries.index(
         next(e for e in entries
-             if e["name"] == str(body["name"])[:64]
+             if e["name"] == name[:64]
              and e["elapsed_ms"] == int(body["elapsed_ms"]))
     ) + 1}
 
@@ -229,4 +232,16 @@ async def add_leaderboard_entry(body: dict):
 @router.delete("/leaderboard")
 async def clear_leaderboard():
     _save_leaderboard([])
+    return {"ok": True}
+
+
+@router.delete("/leaderboard/{entry_id}")
+async def delete_leaderboard_entry(entry_id: int):
+    """Delete a single leaderboard entry by 0-based index (from the sorted list)."""
+    entries = _load_leaderboard()
+    entries.sort(key=lambda e: e.get("elapsed_ms", 999_999_999))
+    if entry_id < 0 or entry_id >= len(entries):
+        raise HTTPException(status_code=404, detail="Entry not found")
+    entries.pop(entry_id)
+    _save_leaderboard(entries)
     return {"ok": True}

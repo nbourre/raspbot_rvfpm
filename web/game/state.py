@@ -131,6 +131,7 @@ start_time:    float | None   = None    # monotonic time when TARGETING began
 hold_start:    float | None   = None    # monotonic time when HOLDING began
 elapsed_ms:    int            = 0       # total elapsed ms (updated while running)
 _task:         asyncio.Task | None = None
+_skip_event:   asyncio.Event | None = None   # set to skip current stop
 
 
 def get_state() -> dict[str, Any]:
@@ -149,11 +150,13 @@ def get_state() -> dict[str, Any]:
 def reset(broadcast: bool = True) -> None:
     """Abort any running game and return to IDLE."""
     global phase, stop_index, sequence, completed, overlay_radius
-    global start_time, hold_start, elapsed_ms, _task
+    global start_time, hold_start, elapsed_ms, _task, _skip_event
 
     if _task is not None and not _task.done():
         _task.cancel()
         _task = None
+
+    _skip_event = None
 
     phase         = GamePhase.IDLE
     stop_index    = 0
@@ -186,9 +189,16 @@ def reset(broadcast: bool = True) -> None:
 
 def start() -> None:
     """Launch the game loop as an asyncio background task."""
-    global _task
+    global _task, _skip_event
     reset(broadcast=False)   # game_loop will broadcast COUNTDOWN immediately
+    _skip_event = asyncio.Event()
     _task = asyncio.create_task(_game_loop())
+
+
+def skip_stop() -> None:
+    """Signal the game loop to skip the current stop (LB button)."""
+    if _skip_event is not None and phase in (GamePhase.TARGETING, GamePhase.HOLDING):
+        _skip_event.set()
 
 
 # ---------------------------------------------------------------------------
@@ -213,7 +223,11 @@ async def _game_loop() -> None:
     radius_tol    = float(cfg.get("radius_tolerance", 0.10))
 
     colors_pool = ["red", "green", "blue", "black"]
-    sequence    = [random.choice(colors_pool) for _ in range(num_stops)]
+    sequence = []
+    for _ in range(num_stops):
+        # Pick any color that differs from the last one
+        choices = [c for c in colors_pool if c != (sequence[-1] if sequence else None)]
+        sequence.append(random.choice(choices))
     total_stops_local = num_stops
 
     # ------------------------------------------------------------------
@@ -251,8 +265,17 @@ async def _game_loop() -> None:
 
             # Inner loop: wait for correct positioning
             matched_circle: dict | None = None
+            skipped = False
+            if _skip_event is not None:
+                _skip_event.clear()
             while True:
                 elapsed_ms = int((time.monotonic() - start_time) * 1000)
+
+                # Check for LB skip signal
+                if _skip_event is not None and _skip_event.is_set():
+                    _skip_event.clear()
+                    skipped = True
+                    break
 
                 # Grab a frame
                 detections: list[dict] = []
@@ -295,10 +318,12 @@ async def _game_loop() -> None:
 
                 await asyncio.sleep(0.05)   # ~20 fps detection rate
 
-            # Stop validated - brief white flash
-            if rs.robot is not None:
-                _set_leds_solid(rs.robot, "white")
-            await asyncio.sleep(0.4)
+            # Stop validated or skipped
+            if not skipped:
+                # Brief white flash on valid stop
+                if rs.robot is not None:
+                    _set_leds_solid(rs.robot, "white")
+                await asyncio.sleep(0.4)
 
             stop_index += 1
             await _broadcast_state()
