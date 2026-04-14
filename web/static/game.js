@@ -70,6 +70,13 @@ let totalStops      = 5;
 let gameSequence    = [];
 let lastScore       = null;    // { elapsed_ms, sequence, stops }
 
+// Live timer: anchor from last game_state message so the display ticks
+// smoothly between server pushes.
+let timerBaseMs     = 0;       // server elapsed_ms at anchor point
+let timerBasePerfMs = 0;       // performance.now() at anchor point
+let timerRunning    = false;   // whether the rAF tick is active
+let timerRafId      = null;
+
 // Canvas context
 const ctx = gameCanvas ? gameCanvas.getContext("2d") : null;
 
@@ -268,6 +275,42 @@ function formatTime(ms) {
   return `${s}.${ds}s`;
 }
 
+// ---------------------------------------------------------------------------
+// Live timer tick (rAF loop)
+// ---------------------------------------------------------------------------
+
+function liveElapsedMs() {
+  if (!timerRunning) return elapsedMs;
+  return timerBaseMs + (performance.now() - timerBasePerfMs);
+}
+
+function timerTick() {
+  if (!timerRunning) return;
+  if (hudTimer) {
+    hudTimer.textContent = formatTime(liveElapsedMs());
+  }
+  timerRafId = requestAnimationFrame(timerTick);
+}
+
+function startTimerTick(serverElapsedMs) {
+  timerBaseMs     = serverElapsedMs;
+  timerBasePerfMs = performance.now();
+  if (!timerRunning) {
+    timerRunning = true;
+    timerRafId   = requestAnimationFrame(timerTick);
+  }
+}
+
+function stopTimerTick(finalMs) {
+  timerRunning = false;
+  if (timerRafId !== null) {
+    cancelAnimationFrame(timerRafId);
+    timerRafId = null;
+  }
+  elapsedMs = finalMs;
+  if (hudTimer) hudTimer.textContent = formatTime(finalMs);
+}
+
 function updateHud() {
   if (!gameHud) return;
 
@@ -277,7 +320,7 @@ function updateHud() {
   if (!active) return;
 
   hudStop.textContent  = `${stopIndex + 1} / ${totalStops}`;
-  hudTimer.textContent = formatTime(elapsedMs);
+  hudTimer.textContent = formatTime(liveElapsedMs());
 
   if (hudTargetDot && targetColor) {
     hudTargetDot.style.background = COLOR_CSS[targetColor] || "#fff";
@@ -339,6 +382,16 @@ function handleGameMessage(data) {
     // Stop detection test if game starts
     if (prevPhase === "IDLE" && gamePhase !== "IDLE" && detectTestActive) {
       stopDetectTest();
+    }
+
+    // Live timer management
+    if (gamePhase === "IDLE" || gamePhase === "COUNTDOWN") {
+      stopTimerTick(elapsedMs);
+    } else if (gamePhase === "FINISHED") {
+      stopTimerTick(elapsedMs);
+    } else {
+      // TARGETING or HOLDING: re-anchor every state push so drift stays low
+      startTimerTick(elapsedMs);
     }
 
     updateGameStatusPill(gamePhase);
