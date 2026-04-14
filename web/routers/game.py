@@ -10,6 +10,7 @@ GET  /game/state          - current game state snapshot
 POST /game/reset          - abort game, return to IDLE
 GET  /game/config         - return current config JSON
 POST /game/config         - save new config JSON
+GET  /game/detect         - grab one camera frame and return all detected circles
 GET  /game/leaderboard    - return leaderboard JSON
 POST /game/leaderboard    - add an entry to the leaderboard
 DELETE /game/leaderboard  - clear entire leaderboard
@@ -65,6 +66,61 @@ async def get_game_state():
 async def reset_game():
     gstate.reset()
     return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Live detection test (used by config panel)
+# ---------------------------------------------------------------------------
+
+@router.get("/detect")
+async def detect_once():
+    """Grab one frame from the camera and return all detected circles.
+
+    This endpoint is intended for the configuration panel to let the operator
+    verify that the HSV calibration is picking up circles correctly without
+    starting a full game session.
+
+    Returns
+    -------
+    {
+        "ok": true,
+        "detections": [
+            { "color": "red", "cx": 0.51, "cy": 0.49,
+              "radius_ratio": 0.22, "cx_px": 320, "cy_px": 240, "radius_px": 140 }
+        ]
+    }
+    """
+    import asyncio
+    from web.game.detector import detect_circles
+
+    cfg = gcfg.load()
+
+    try:
+        import cv2
+    except ImportError:
+        return JSONResponse({"ok": False, "error": "cv2 not available", "detections": []})
+
+    # Run blocking camera grab in a thread so we don't block the event loop
+    def _grab():
+        cap = cv2.VideoCapture(0)
+        try:
+            if not cap.isOpened():
+                return None
+            # Discard a couple of stale buffered frames
+            for _ in range(3):
+                cap.grab()
+            ret, frame = cap.read()
+            return frame if ret else None
+        finally:
+            cap.release()
+
+    frame = await asyncio.to_thread(_grab)
+
+    if frame is None:
+        return JSONResponse({"ok": False, "error": "Camera not available", "detections": []})
+
+    detections = detect_circles(frame, cfg)
+    return JSONResponse({"ok": True, "detections": detections})
 
 
 # ---------------------------------------------------------------------------

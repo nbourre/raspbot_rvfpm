@@ -158,6 +158,18 @@
         <!-- HSV color calibration -->
         <div>
           <div class="config-section-title">Color Calibration (HSV)</div>
+
+          <!-- Detection test mode -->
+          <div class="detect-test-row">
+            <button id="btn-detect-test" class="btn-detect-test">Test Detection</button>
+            <div id="detect-test-badges" class="detect-test-badges">
+              <span class="dtbadge" data-color="red">Red</span>
+              <span class="dtbadge" data-color="green">Green</span>
+              <span class="dtbadge" data-color="blue">Blue</span>
+              <span class="dtbadge" data-color="black">Black</span>
+            </div>
+          </div>
+
           <div class="hsv-tabs">
             <button class="hsv-tab active" data-color="red">Red</button>
             <button class="hsv-tab"        data-color="green">Green</button>

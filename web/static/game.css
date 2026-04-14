@@ -184,6 +184,63 @@
   text-align: right;
 }
 
+/* Detection test mode row */
+.detect-test-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.btn-detect-test {
+  padding: 0.25rem 0.8rem;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 80ms, color 80ms, border-color 80ms;
+  white-space: nowrap;
+}
+.btn-detect-test.active {
+  background: #1a3a1a;
+  color: #4caf50;
+  border-color: #4caf50;
+}
+
+.detect-test-badges {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.dtbadge {
+  padding: 0.15rem 0.55rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--bg);
+  transition: background 120ms, color 120ms, border-color 120ms;
+  opacity: 0.4;
+}
+.dtbadge[data-color="red"]   { --badge-color: #ef4444; }
+.dtbadge[data-color="green"] { --badge-color: #22c55e; }
+.dtbadge[data-color="blue"]  { --badge-color: #3b82f6; }
+.dtbadge[data-color="black"] { --badge-color: #a0a0a0; }
+
+.dtbadge.detected {
+  opacity: 1;
+  color: var(--badge-color);
+  border-color: var(--badge-color);
+  background: rgba(0,0,0,0.35);
+  box-shadow: 0 0 6px var(--badge-color);
+}
+
 /* HSV calibration color tabs */
 .hsv-tabs {
   display: flex;

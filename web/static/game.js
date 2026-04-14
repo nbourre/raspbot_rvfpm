@@ -110,6 +110,42 @@ function drawOverlay(detections) {
   const cy = h / 2;
   const r  = overlayRadius * w;
 
+  // -- Detected circles (full opacity, color-coded, labelled) ---------------
+  if (detections && detections.length > 0) {
+    for (const d of detections) {
+      const dx  = d.cx * w;
+      const dy  = d.cy * h;
+      const dr  = d.radius_ratio * w;
+      const css = COLOR_CSS[d.color] || "#ffffff";
+      const isTarget = d.color === targetColor;
+
+      // Semi-transparent fill
+      ctx.beginPath();
+      ctx.arc(dx, dy, dr, 0, Math.PI * 2);
+      ctx.fillStyle   = css;
+      ctx.globalAlpha = isTarget ? 0.22 : 0.12;
+      ctx.fill();
+      ctx.globalAlpha = 1.0;
+
+      // Full-opacity stroke
+      ctx.beginPath();
+      ctx.arc(dx, dy, dr, 0, Math.PI * 2);
+      ctx.strokeStyle = css;
+      ctx.lineWidth   = isTarget ? 3 : 2;
+      ctx.stroke();
+
+      // Color label
+      ctx.font         = `bold ${Math.max(11, Math.round(dr * 0.4))}px monospace`;
+      ctx.fillStyle    = css;
+      ctx.globalAlpha  = 1.0;
+      ctx.textAlign    = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(d.color, dx, dy);
+    }
+    ctx.textAlign    = "start";
+    ctx.textBaseline = "alphabetic";
+  }
+
   // -- Target overlay circle ------------------------------------------------
   let strokeColor = "rgba(255,255,255,0.7)";
   let lineWidth   = 3;
@@ -140,19 +176,63 @@ function drawOverlay(detections) {
     ctx.stroke();
   }
 
-  // -- Detected circles debug dots (small markers) --------------------------
-  if (detections && detections.length > 0) {
-    for (const d of detections) {
-      const dx = d.cx * w;
-      const dy = d.cy * h;
-      const dr = d.radius_ratio * w;
-      ctx.beginPath();
-      ctx.arc(dx, dy, dr, 0, Math.PI * 2);
-      ctx.strokeStyle = COLOR_CSS[d.color] || "#ffffff";
-      ctx.globalAlpha = 0.35;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.globalAlpha = 1.0;
+  // -- Directional arrow (TARGETING: target color found but not centered) ----
+  if (gamePhase === "TARGETING" && targetColor && detections && detections.length > 0) {
+    // Find the best (largest) detection of the target color
+    const candidates = detections.filter(d => d.color === targetColor);
+    if (candidates.length > 0) {
+      const best = candidates.reduce((a, b) => a.radius_ratio > b.radius_ratio ? a : b);
+      const bx   = best.cx * w;
+      const by   = best.cy * h;
+      const dx   = bx - cx;
+      const dy   = by - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      // Only draw arrow if circle centre is outside the target ring
+      if (dist > r * 0.25) {
+        const ux = dx / dist;
+        const uy = dy / dist;
+
+        // Arrow starts at edge of target ring, ends 30px beyond
+        const arrowFrom = r + 10;
+        const arrowTo   = Math.min(dist - best.radius_ratio * w * 0.5 - 4, r + 52);
+
+        if (arrowTo > arrowFrom + 10) {
+          const ax1 = cx + ux * arrowFrom;
+          const ay1 = cy + uy * arrowFrom;
+          const ax2 = cx + ux * arrowTo;
+          const ay2 = cy + uy * arrowTo;
+
+          const arrowColor = COLOR_CSS[targetColor] || "#ffffff";
+          const headLen    = 12;
+          const angle      = Math.atan2(ay2 - ay1, ax2 - ax1);
+
+          ctx.beginPath();
+          ctx.moveTo(ax1, ay1);
+          ctx.lineTo(ax2, ay2);
+          ctx.strokeStyle = arrowColor;
+          ctx.lineWidth   = 3;
+          ctx.globalAlpha = 0.9;
+          ctx.stroke();
+
+          // Arrowhead
+          ctx.beginPath();
+          ctx.moveTo(ax2, ay2);
+          ctx.lineTo(
+            ax2 - headLen * Math.cos(angle - Math.PI / 6),
+            ay2 - headLen * Math.sin(angle - Math.PI / 6)
+          );
+          ctx.moveTo(ax2, ay2);
+          ctx.lineTo(
+            ax2 - headLen * Math.cos(angle + Math.PI / 6),
+            ay2 - headLen * Math.sin(angle + Math.PI / 6)
+          );
+          ctx.strokeStyle = arrowColor;
+          ctx.lineWidth   = 3;
+          ctx.stroke();
+          ctx.globalAlpha = 1.0;
+        }
+      }
     }
   }
 }
@@ -255,6 +335,11 @@ function handleGameMessage(data) {
     stopIndex     = data.stop_index    || 0;
     totalStops    = data.total_stops   || 5;
     gameSequence  = data.completed     || [];
+
+    // Stop detection test if game starts
+    if (prevPhase === "IDLE" && gamePhase !== "IDLE" && detectTestActive) {
+      stopDetectTest();
+    }
 
     updateGameStatusPill(gamePhase);
     updateHud();
@@ -497,6 +582,132 @@ document.querySelectorAll(".hsv-tab").forEach(tab => {
     renderHsvTab(tab.dataset.color, cfgData);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Detection test mode
+// ---------------------------------------------------------------------------
+
+const btnDetectTest   = document.getElementById("btn-detect-test");
+const detectBadges    = document.querySelectorAll(".dtbadge");
+
+let detectTestActive  = false;
+let detectTestTimer   = null;
+let lastDetections    = [];   // latest results from /game/detect
+
+async function pollDetect() {
+  try {
+    const res  = await fetch("/game/detect");
+    const data = await res.json();
+    lastDetections = data.detections || [];
+    updateDetectBadges(lastDetections);
+    // If game is IDLE, redraw canvas with detections
+    if (gamePhase === "IDLE") {
+      drawDetectTestOverlay(lastDetections);
+    }
+  } catch(e) {
+    // silently ignore fetch errors during test mode
+  }
+}
+
+function updateDetectBadges(detections) {
+  const detectedColors = new Set(detections.map(d => d.color));
+  detectBadges.forEach(badge => {
+    const color = badge.dataset.color;
+    badge.classList.toggle("detected", detectedColors.has(color));
+  });
+}
+
+function clearDetectBadges() {
+  detectBadges.forEach(badge => badge.classList.remove("detected"));
+}
+
+function drawDetectTestOverlay(detections) {
+  if (!ctx) return;
+  resizeCanvas();
+  ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+  if (!detections || detections.length === 0) return;
+
+  const w = gameCanvas.width;
+  const h = gameCanvas.height;
+
+  for (const d of detections) {
+    const dx = d.cx * w;
+    const dy = d.cy * h;
+    const dr = d.radius_ratio * w;
+    const css = COLOR_CSS[d.color] || "#ffffff";
+
+    // Filled circle (semi-transparent)
+    ctx.beginPath();
+    ctx.arc(dx, dy, dr, 0, Math.PI * 2);
+    ctx.fillStyle = css;
+    ctx.globalAlpha = 0.18;
+    ctx.fill();
+    ctx.globalAlpha = 1.0;
+
+    // Stroke ring (full opacity)
+    ctx.beginPath();
+    ctx.arc(dx, dy, dr, 0, Math.PI * 2);
+    ctx.strokeStyle = css;
+    ctx.lineWidth   = 3;
+    ctx.stroke();
+
+    // Color label
+    ctx.font      = "bold 13px monospace";
+    ctx.fillStyle = css;
+    ctx.globalAlpha = 1.0;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(d.color, dx, dy);
+  }
+  ctx.textAlign    = "start";
+  ctx.textBaseline = "alphabetic";
+}
+
+function startDetectTest() {
+  detectTestActive = true;
+  btnDetectTest.classList.add("active");
+  btnDetectTest.textContent = "Stop Test";
+  // Show canvas even in IDLE
+  if (gameCanvas) gameCanvas.style.display = "block";
+  pollDetect();
+  detectTestTimer = setInterval(pollDetect, 200);
+}
+
+function stopDetectTest() {
+  detectTestActive = false;
+  if (detectTestTimer !== null) {
+    clearInterval(detectTestTimer);
+    detectTestTimer = null;
+  }
+  lastDetections = [];
+  clearDetectBadges();
+  btnDetectTest.classList.remove("active");
+  btnDetectTest.textContent = "Test Detection";
+  // Clear canvas
+  if (ctx) ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+}
+
+if (btnDetectTest) {
+  btnDetectTest.addEventListener("click", () => {
+    if (detectTestActive) {
+      stopDetectTest();
+    } else {
+      startDetectTest();
+    }
+  });
+}
+
+// Stop detect test when config panel is closed
+if (configToggle) {
+  configToggle.addEventListener("click", () => {
+    if (detectTestActive && !configPanel.classList.contains("open")) {
+      stopDetectTest();
+    }
+  }, true);  // capture: fires before the toggle listener in the main handler
+}
+
+// Expose for external use
+window.stopDetectTest = stopDetectTest;
 
 // ---------------------------------------------------------------------------
 // Leaderboard modal
