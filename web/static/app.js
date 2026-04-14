@@ -58,12 +58,12 @@ function connect() {
   ws = new WebSocket(`${proto}://${location.host}/ws`);
 
   ws.addEventListener("open", () => {
-    statusEl.textContent = "Connected";
+    statusEl.textContent = "Connect\u00e9";
     statusEl.className = "status connected";
   });
 
   ws.addEventListener("close", () => {
-    statusEl.textContent = "Disconnected";
+    statusEl.textContent = "D\u00e9connect\u00e9";
     statusEl.className = "status disconnected";
     ws = null;
     setTimeout(connect, WS_RECONNECT_DELAY_MS);
@@ -352,8 +352,8 @@ function gpLoop() {
 window.addEventListener("gamepadconnected", (evt) => {
   gpIndex = evt.gamepad.index;
   gpStatusEl.textContent = evt.gamepad.id.includes("Xbox")
-    ? "Xbox Controller"
-    : "Gamepad";
+    ? "Manette Xbox"
+    : "Manette";
   gpStatusEl.className = "status gp-connected";
   // Sync servo state with current slider positions
   gpPan  = parseInt(panSlider.value,  10);
@@ -367,7 +367,7 @@ window.addEventListener("gamepadconnected", (evt) => {
 window.addEventListener("gamepaddisconnected", (evt) => {
   if (evt.gamepad.index === gpIndex) {
     gpIndex = null;
-    gpStatusEl.textContent = "No Gamepad";
+    gpStatusEl.textContent = "Pas de manette";
     gpStatusEl.className = "status gp-disconnected";
     // Cancel rAF loop and stop motors
     if (gpRafId !== null) {

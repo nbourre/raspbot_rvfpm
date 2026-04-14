@@ -291,7 +291,7 @@ function updateHud() {
     const showHold = gamePhase === "HOLDING";
     hudHold.classList.toggle("visible", showHold);
     if (showHold) {
-      hudHold.textContent = `Hold ${Math.round(holdProgress * 100)}%`;
+      hudHold.textContent = `Tiens\u00a0${Math.round(holdProgress * 100)}\u00a0%`;
     }
   }
 }
@@ -301,11 +301,11 @@ function updateHud() {
 // ---------------------------------------------------------------------------
 
 const PHASE_LABEL = {
-  IDLE:       "Idle",
-  COUNTDOWN:  "Get ready!",
-  TARGETING:  "Find target",
-  HOLDING:    "Hold...",
-  FINISHED:   "Finished!",
+  IDLE:       "Inactif",
+  COUNTDOWN:  "Pr\u00eat\u00b7e\u00a0?",
+  TARGETING:  "Trouve la cible",
+  HOLDING:    "Tiens bon\u2026",
+  FINISHED:   "Termin\u00e9\u00a0!",
 };
 const PHASE_CLASS = {
   IDLE:       "status game-idle",
@@ -436,7 +436,7 @@ function updateRbHint(progress) {
   }
   hint.style.display = "block";
   const pct = Math.round(progress * 100);
-  hint.textContent = `Hold RB to start game... ${pct}%`;
+  hint.textContent = `Maintiens RB pour d\u00e9marrer\u2026 ${pct}\u00a0%`;
 }
 
 // Expose for app.js
@@ -543,10 +543,10 @@ if (btnSaveCfg) {
         body: JSON.stringify(updated),
       });
       cfgData = updated;
-      btnSaveCfg.textContent = "Saved!";
-      setTimeout(() => { btnSaveCfg.textContent = "Save"; }, 1500);
+      btnSaveCfg.textContent = "Sauvegard\u00e9\u00a0!";
+      setTimeout(() => { btnSaveCfg.textContent = "Sauvegarder"; }, 1500);
     } catch(e) {
-      alert("Save failed: " + e.message);
+      alert("Erreur lors de la sauvegarde\u00a0: " + e.message);
     }
   });
 }
@@ -832,7 +832,7 @@ function drawDetectTestOverlay(detections) {
 function startDetectTest() {
   detectTestActive = true;
   btnDetectTest.classList.add("active");
-  btnDetectTest.textContent = "Stop Test";
+  btnDetectTest.textContent = "Arr\u00eater le test";
   // Show canvas even in IDLE
   if (gameCanvas) gameCanvas.style.display = "block";
   setMaskPreviewVisible(true);
@@ -849,7 +849,7 @@ function stopDetectTest() {
   lastDetections = [];
   clearDetectBadges();
   btnDetectTest.classList.remove("active");
-  btnDetectTest.textContent = "Test Detection";
+  btnDetectTest.textContent = "Tester la d\u00e9tection";
   setMaskPreviewVisible(false);
   // Clear canvas
   if (ctx) ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
@@ -915,7 +915,7 @@ function renderLeaderboard(entries, highlightMs) {
     if (highlightMs !== undefined && e.elapsed_ms === highlightMs) {
       tr.className = "me";
     }
-    const delBtn = `<button class="lb-del-btn" title="Delete entry" data-idx="${i}">&times;</button>`;
+      const delBtn = `<button class="lb-del-btn" title="Supprimer" data-idx="${i}">&times;</button>`;
     tr.innerHTML = `
       <td class="rank">#${i + 1}</td>
       <td>${escHtml(e.name)}</td>
@@ -933,8 +933,8 @@ function renderLeaderboard(entries, highlightMs) {
       try {
         await fetch(`/game/leaderboard/${idx}`, { method: "DELETE" });
         await refreshLeaderboard(highlightMs);
-      } catch(e) {
-        alert("Failed to delete entry: " + e.message);
+        } catch(e) {
+        alert("Impossible de supprimer l\u2019entr\u00e9e\u00a0: " + e.message);
       }
     });
   });
@@ -957,11 +957,11 @@ if (lbSubmit) {
     const name   = nameEl.value.trim();
     const school = schoolEl.value.trim();
     if (!name || !school) {
-      alert("Please enter your name and school.");
+      alert("Merci d\u2019entrer ton pr\u00e9nom et ton \u00e9cole.");
       return;
     }
     if (name.toLowerCase() === "test") {
-      alert("Nice try. Enter a real name.");
+      alert("Bel essai. Entre un vrai pr\u00e9nom.");
       return;
     }
     try {
@@ -978,7 +978,7 @@ if (lbSubmit) {
       });
       const result = await res.json();
       lbSubmit.disabled    = true;
-      lbSubmit.textContent = `Saved! Rank #${result.rank}`;
+      lbSubmit.textContent = `Sauvegard\u00e9\u00a0! Rang #${result.rank}`;
       await refreshLeaderboard(lastScore.elapsed_ms);
 
       // Persist in localStorage for reference
@@ -989,7 +989,7 @@ if (lbSubmit) {
       } catch(_) {}
 
     } catch(e) {
-      alert("Failed to save score: " + e.message);
+      alert("Impossible d\u2019enregistrer le score\u00a0: " + e.message);
     }
   });
 }
@@ -1001,7 +1001,7 @@ if (lbClose) {
     // Reset submit button for next game
     if (lbSubmit) {
       lbSubmit.disabled    = false;
-      lbSubmit.textContent = "Save Score";
+      lbSubmit.textContent = "Enregistrer";
     }
     const nameEl   = document.getElementById("lb-name");
     const schoolEl = document.getElementById("lb-school");

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,20 +11,20 @@
   <header>
     <h1>Raspbot RVFPM</h1>
     <div class="header-status">
-      <span id="ws-status"   class="status disconnected">Disconnected</span>
-      <span id="gp-status"   class="status gp-disconnected">No Gamepad</span>
-      <span id="game-status" class="status game-idle">Idle</span>
+      <span id="ws-status"   class="status disconnected">D&#233;connect&#233;</span>
+      <span id="gp-status"   class="status gp-disconnected">Pas de manette</span>
+      <span id="game-status" class="status game-idle">Inactif</span>
     </div>
   </header>
 
   <main>
     <!-- Left column: camera + sensor + game panel -->
     <section class="panel panel-camera">
-      <h2>Camera</h2>
+      <h2>Cam&#233;ra</h2>
 
       <!-- Camera with overlay canvas -->
       <div class="camera-wrap">
-        <img id="camera-img" src="/camera/stream" alt="Camera feed" />
+        <img id="camera-img" src="/camera/stream" alt="Flux cam&#233;ra" />
         <canvas id="game-canvas"></canvas>
 
         <!-- In-game HUD bar (top of camera) -->
@@ -38,7 +38,7 @@
         </div>
 
         <!-- Slow mode indicator (overlaid bottom of camera) -->
-        <div id="slow-mode-overlay">SLOW</div>
+        <div id="slow-mode-overlay">LENT</div>
       </div>
 
       <div class="distance-box">
@@ -48,12 +48,12 @@
 
       <div class="servo-controls">
         <label>
-          Pan
+          Panoramique
           <input type="range" id="pan-slider" min="0" max="180" value="90" />
           <span id="pan-value">90&deg;</span>
         </label>
         <label>
-          Tilt
+          Inclinaison
           <input type="range" id="tilt-slider" min="0" max="90" value="25" />
           <span id="tilt-value">25&deg;</span>
         </label>
@@ -63,9 +63,9 @@
       <div id="game-panel">
         <div class="game-panel-row">
           <span class="game-hint">
-            Hold RB 3s to start Parking Challenge
+            Maintiens RB 3s pour d&#233;marrer le D&#233;fi de stationnement
           </span>
-          <button id="btn-game-reset">Reset Game</button>
+          <button id="btn-game-reset">R&#233;initialiser</button>
         </div>
         <div id="rb-hold-hint" style="display:none; font-size:0.75rem; color:#facc15;"></div>
       </div>
@@ -76,36 +76,36 @@
 
       <!-- Tab bar -->
       <div class="tab-bar" role="tablist">
-        <button class="tab-btn active" data-tab="drive"  role="tab" aria-selected="true">Drive</button>
+        <button class="tab-btn active" data-tab="drive"  role="tab" aria-selected="true">Conduite</button>
         <button class="tab-btn"        data-tab="config" role="tab" aria-selected="false">Config</button>
       </div>
 
       <!-- Drive tab -->
       <div id="tab-drive" class="tab-pane active" role="tabpanel">
         <div class="dpad">
-          <button class="dpad-btn" data-dir="diagonal_forward_left"   title="Forward-Left">&#8598;</button>
-          <button class="dpad-btn" data-dir="forward"                  title="Forward (W)">&#8593;</button>
-          <button class="dpad-btn" data-dir="diagonal_forward_right"  title="Forward-Right">&#8599;</button>
+          <button class="dpad-btn" data-dir="diagonal_forward_left"   title="Avant-Gauche">&#8598;</button>
+          <button class="dpad-btn" data-dir="forward"                  title="Avant (W)">&#8593;</button>
+          <button class="dpad-btn" data-dir="diagonal_forward_right"  title="Avant-Droit">&#8599;</button>
 
-          <button class="dpad-btn" data-dir="strafe_left"             title="Strafe Left (A)">&#8592;</button>
-          <button class="dpad-btn dpad-stop" data-dir="stop"          title="Stop">&#9632;</button>
-          <button class="dpad-btn" data-dir="strafe_right"            title="Strafe Right (D)">&#8594;</button>
+          <button class="dpad-btn" data-dir="strafe_left"             title="D&#233;placement gauche (A)">&#8592;</button>
+          <button class="dpad-btn dpad-stop" data-dir="stop"          title="Arr&#234;t">&#9632;</button>
+          <button class="dpad-btn" data-dir="strafe_right"            title="D&#233;placement droit (D)">&#8594;</button>
 
-          <button class="dpad-btn" data-dir="diagonal_backward_left"  title="Backward-Left">&#8601;</button>
-          <button class="dpad-btn" data-dir="backward"                 title="Backward (S)">&#8595;</button>
-          <button class="dpad-btn" data-dir="diagonal_backward_right" title="Backward-Right">&#8600;</button>
+          <button class="dpad-btn" data-dir="diagonal_backward_left"  title="Arri&#232;re-Gauche">&#8601;</button>
+          <button class="dpad-btn" data-dir="backward"                 title="Arri&#232;re (S)">&#8595;</button>
+          <button class="dpad-btn" data-dir="diagonal_backward_right" title="Arri&#232;re-Droit">&#8600;</button>
         </div>
 
         <div class="spin-row">
-          <button class="spin-btn" data-dir="turn_left"  title="Spin Left (Q)">&#8634;</button>
-          <button class="spin-btn" data-dir="turn_right" title="Spin Right (E)">&#8635;</button>
+          <button class="spin-btn" data-dir="turn_left"  title="Rotation gauche (Q)">&#8634;</button>
+          <button class="spin-btn" data-dir="turn_right" title="Rotation droite (E)">&#8635;</button>
         </div>
 
         <p class="hint">
-          Hold to drive &bull; Release to stop<br/>
-          WASD / arrows &bull; Q/E to spin<br/>
-          Gamepad: L-stick=drive &bull; R-stick=spin &bull; D-pad=camera<br/>
-          A=slow mode &bull; LB=skip color &bull; <strong>RB hold 3s = start game</strong>
+          Maintenir pour avancer &bull; Rel&#226;cher pour arr&#234;ter<br/>
+          WASD / fl&#232;ches &bull; Q/E pour tourner<br/>
+          Manette&nbsp;: stick G=conduite &bull; stick D=rotation &bull; D-pad=cam&#233;ra<br/>
+          A=mode lent &bull; LB=passer couleur &bull; <strong>RB maintenu 3s = d&#233;marrer</strong>
         </p>
       </div>
 
@@ -114,45 +114,45 @@
 
         <!-- Gameplay parameters -->
         <div class="config-section">
-          <div class="config-section-title">Gameplay</div>
+          <div class="config-section-title">Partie</div>
 
           <div class="config-row">
-            <label for="cfg-num-stops">Stops per game</label>
+            <label for="cfg-num-stops">Arr&#234;ts par partie</label>
             <input type="range" id="cfg-num-stops" min="1" max="10" step="1" value="5"
               oninput="document.getElementById('cfg-num-stops-val').textContent=this.value" />
             <span id="cfg-num-stops-val">5</span>
           </div>
 
           <div class="config-row">
-            <label for="cfg-hold-duration">Hold duration (s)</label>
+            <label for="cfg-hold-duration">Dur&#233;e de maintien (s)</label>
             <input type="range" id="cfg-hold-duration" min="0.5" max="5" step="0.1" value="1.0"
               oninput="document.getElementById('cfg-hold-duration-val').textContent=parseFloat(this.value).toFixed(1)" />
             <span id="cfg-hold-duration-val">1.0</span>
           </div>
 
           <div class="config-row">
-            <label for="cfg-overlay-min">Overlay radius min</label>
+            <label for="cfg-overlay-min">Rayon de la cible (min)</label>
             <input type="range" id="cfg-overlay-min" min="0.05" max="0.49" step="0.01" value="0.20"
               oninput="document.getElementById('cfg-overlay-min-val').textContent=Math.round(parseFloat(this.value)*100)+'%'" />
             <span id="cfg-overlay-min-val">20%</span>
           </div>
 
           <div class="config-row">
-            <label for="cfg-overlay-max">Overlay radius max</label>
+            <label for="cfg-overlay-max">Rayon de la cible (max)</label>
             <input type="range" id="cfg-overlay-max" min="0.05" max="0.49" step="0.01" value="0.35"
               oninput="document.getElementById('cfg-overlay-max-val').textContent=Math.round(parseFloat(this.value)*100)+'%'" />
             <span id="cfg-overlay-max-val">35%</span>
           </div>
 
           <div class="config-row">
-            <label for="cfg-center-tolerance">Center tolerance</label>
+            <label for="cfg-center-tolerance">Tol&#233;rance de centrage</label>
             <input type="range" id="cfg-center-tolerance" min="0.02" max="0.40" step="0.01" value="0.10"
               oninput="document.getElementById('cfg-center-tolerance-val').textContent=Math.round(parseFloat(this.value)*100)+'%'" />
             <span id="cfg-center-tolerance-val">10%</span>
           </div>
 
           <div class="config-row">
-            <label for="cfg-radius-tolerance">Radius tolerance</label>
+            <label for="cfg-radius-tolerance">Tol&#233;rance de rayon</label>
             <input type="range" id="cfg-radius-tolerance" min="0.02" max="0.40" step="0.01" value="0.10"
               oninput="document.getElementById('cfg-radius-tolerance-val').textContent=Math.round(parseFloat(this.value)*100)+'%'" />
             <span id="cfg-radius-tolerance-val">10%</span>
@@ -161,24 +161,24 @@
 
         <!-- HSV color calibration -->
         <div class="config-section">
-          <div class="config-section-title">Color Calibration (HSV)</div>
+          <div class="config-section-title">Calibration des couleurs (TSV)</div>
 
           <!-- Detection test mode -->
           <div class="detect-test-row">
-            <button id="btn-detect-test" class="btn-detect-test">Test Detection</button>
+            <button id="btn-detect-test" class="btn-detect-test">Tester la d&#233;tection</button>
             <div id="detect-test-badges" class="detect-test-badges">
-              <span class="dtbadge" data-color="red">Red</span>
-              <span class="dtbadge" data-color="green">Green</span>
-              <span class="dtbadge" data-color="blue">Blue</span>
-              <span class="dtbadge" data-color="black">Black</span>
+              <span class="dtbadge" data-color="red">Rouge</span>
+              <span class="dtbadge" data-color="green">Vert</span>
+              <span class="dtbadge" data-color="blue">Bleu</span>
+              <span class="dtbadge" data-color="black">Noir</span>
             </div>
           </div>
 
           <div class="hsv-tabs">
-            <button class="hsv-tab active" data-color="red">Red</button>
-            <button class="hsv-tab"        data-color="green">Green</button>
-            <button class="hsv-tab"        data-color="blue">Blue</button>
-            <button class="hsv-tab"        data-color="black">Black</button>
+            <button class="hsv-tab active" data-color="red">Rouge</button>
+            <button class="hsv-tab"        data-color="green">Vert</button>
+            <button class="hsv-tab"        data-color="blue">Bleu</button>
+            <button class="hsv-tab"        data-color="black">Noir</button>
           </div>
 
           <div class="hsv-grid">
@@ -208,17 +208,17 @@
           <!-- Binary mask preview -->
           <div id="mask-preview-wrap" style="display:none;">
             <div class="mask-preview-header">
-              <span class="config-section-title" style="margin:0;">Mask Preview</span>
-              <span class="mask-preview-hint">original | threshold</span>
-              <button id="btn-mask-refresh" class="btn-secondary" style="padding:0.15rem 0.6rem; font-size:0.72rem;">Refresh</button>
+              <span class="config-section-title" style="margin:0;">Aper&#231;u du masque</span>
+              <span class="mask-preview-hint">original | seuil</span>
+              <button id="btn-mask-refresh" class="btn-secondary" style="padding:0.15rem 0.6rem; font-size:0.72rem;">Actualiser</button>
             </div>
-            <img id="mask-preview-img" class="mask-preview-img" alt="HSV mask preview" />
+            <img id="mask-preview-img" class="mask-preview-img" alt="Aper&#231;u du masque TSV" />
           </div>
         </div>
 
         <div class="config-actions">
-          <button class="btn-secondary" onclick="loadConfig()">Reset</button>
-          <button class="btn-save" id="btn-save-config">Save</button>
+          <button class="btn-secondary" onclick="loadConfig()">R&#233;initialiser</button>
+          <button class="btn-save" id="btn-save-config">Sauvegarder</button>
         </div>
 
       </div><!-- #tab-config -->
@@ -228,7 +228,7 @@
   <!-- Leaderboard modal -->
   <div id="lb-overlay">
     <div id="lb-modal">
-      <h2>Game Finished!</h2>
+      <h2>Partie termin&#233;e&#160;!</h2>
 
       <div id="lb-score-display">0.00s</div>
 
@@ -236,14 +236,14 @@
 
       <form id="lb-form" onsubmit="return false;">
         <label>
-          Your name
+          Ton pr&#233;nom
           <input type="text" id="lb-name" placeholder="Alice" maxlength="64" autocomplete="off" />
         </label>
         <label>
-          School / Team
-          <input type="text" id="lb-school" placeholder="CEGEP XYZ" maxlength="64" autocomplete="off" />
+          &#201;cole / &#201;quipe
+          <input type="text" id="lb-school" placeholder="C&#201;GEP XYZ" maxlength="64" autocomplete="off" />
         </label>
-        <button type="button" id="lb-submit">Save Score</button>
+        <button type="button" id="lb-submit">Enregistrer</button>
       </form>
 
       <div id="lb-table-wrap">
@@ -251,9 +251,9 @@
           <thead>
             <tr>
               <th>#</th>
-              <th>Name</th>
-              <th>School</th>
-              <th>Time</th>
+              <th>Pr&#233;nom</th>
+              <th>&#201;cole</th>
+              <th>Temps</th>
             </tr>
           </thead>
           <tbody id="lb-tbody"></tbody>
@@ -261,7 +261,7 @@
       </div>
 
       <div class="lb-close-row">
-        <button id="lb-close">Close &amp; New Game</button>
+        <button id="lb-close">Fermer &amp; Nouvelle partie</button>
       </div>
     </div>
   </div>
