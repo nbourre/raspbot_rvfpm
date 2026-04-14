@@ -450,10 +450,8 @@
 
 /* -- Leaderboard tab (tab-lb) -------------------------------------------- */
 #tab-lb {
-  display: flex;
-  flex-direction: column;
+  align-items: stretch;
   gap: 0.5rem;
-  height: 100%;
 }
 
 .tab-lb-header {
