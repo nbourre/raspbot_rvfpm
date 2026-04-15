@@ -235,6 +235,23 @@
   box-shadow: 0 0 6px var(--badge-color);
 }
 
+/* Enabled toggle per HSV color */
+.hsv-enabled-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  cursor: pointer;
+  margin-top: 0.3rem;
+}
+.hsv-enabled-row input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 /* HSV calibration color tabs */
 .hsv-tabs {
   display: flex;

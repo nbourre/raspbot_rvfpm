@@ -36,22 +36,26 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # OpenCV HSV: H in [0,179], S and V in [0,255]
     "colors": {
         "red": {
+            "enabled": True,
             "ranges": [
                 [0, 10, 100, 255, 80, 255],
                 [160, 179, 100, 255, 80, 255]
             ]
         },
         "green": {
+            "enabled": True,
             "ranges": [
                 [40, 85, 60, 255, 60, 255]
             ]
         },
         "blue": {
+            "enabled": True,
             "ranges": [
                 [100, 130, 80, 255, 60, 255]
             ]
         },
         "black": {
+            "enabled": True,
             # Black: low saturation AND low value (avoids dark-but-coloured shadows)
             "ranges": [
                 [0, 179, 0, 60, 0, 60]

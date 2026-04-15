@@ -139,6 +139,8 @@ def detect_circles(frame: np.ndarray, cfg: dict[str, Any]) -> list[dict]:
     results: list[dict] = []
 
     for color_name, color_def in color_cfg.items():
+        if not color_def.get("enabled", True):
+            continue
         ranges = color_def.get("ranges", [])
         if not ranges:
             continue

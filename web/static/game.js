@@ -549,7 +549,8 @@ function renderConfig(cfg) {
     const colorCfg = (cfg.colors || {})[color] || {};
     const ranges   = colorCfg.ranges || [[0,179,0,255,0,255]];
     const r0       = ranges[0] || [0,179,0,255,0,255];
-    hsvCache[color] = [...r0];
+    hsvCache[color]     = [...r0];
+    enabledCache[color] = colorCfg.enabled !== false;  // default true
   });
   renderHsvTab(activeHsvColor);
 }
@@ -587,7 +588,10 @@ if (btnSaveCfg) {
       const prevRanges = ((cfgData.colors || {})[color] || {}).ranges || [[0,179,0,255,0,255]];
       const newRanges  = [...prevRanges];
       newRanges[0]     = [...cached];
-      updated.colors[color] = { ranges: newRanges };
+      updated.colors[color] = {
+        enabled: enabledCache[color] !== false,
+        ranges:  newRanges,
+      };
     });
     try {
       await fetch("/game/config", {
@@ -647,7 +651,9 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 let activeHsvColor = "red";
 
 // Per-color flat value cache: { red: [hMin,hMax,sMin,sMax,vMin,vMax], ... }
-const hsvCache = { red: null, green: null, blue: null, black: null };
+const hsvCache     = { red: null, green: null, blue: null, black: null };
+// Per-color enabled flag cache
+const enabledCache = { red: true, green: true, blue: true, black: true };
 
 const HSV_KEYS = ["h-min","h-max","s-min","s-max","v-min","v-max"];
 
@@ -661,6 +667,10 @@ function renderHsvTab(color) {
   document.querySelectorAll(".hsv-tab").forEach(t => {
     t.classList.toggle("active", t.dataset.color === color);
   });
+
+  // Enabled checkbox
+  const enabledEl = document.getElementById("hsv-enabled");
+  if (enabledEl) enabledEl.checked = enabledCache[color] !== false;
 
   // Use cached values (or safe defaults if not loaded yet)
   const vals = hsvCache[color] || [0, 179, 0, 255, 0, 255];
@@ -685,6 +695,8 @@ function flushActiveSlidersToCacheAndServer(pushToServer = true) {
     return el ? parseInt(el.value) : 0;
   });
   hsvCache[activeHsvColor] = vals;
+  const enabledEl = document.getElementById("hsv-enabled");
+  if (enabledEl) enabledCache[activeHsvColor] = enabledEl.checked;
   if (pushToServer) pushHsvToServer();
 }
 
@@ -702,6 +714,14 @@ document.querySelectorAll(HSV_KEYS.map(k => `#hsv-${k}`).join(","))
       if (label) label.textContent = slider.value;
     });
   });
+
+// Sync enabled checkbox to cache immediately on change
+const hsvEnabledEl = document.getElementById("hsv-enabled");
+if (hsvEnabledEl) {
+  hsvEnabledEl.addEventListener("change", () => {
+    enabledCache[activeHsvColor] = hsvEnabledEl.checked;
+  });
+}
 
 // Bind HSV tab buttons
 document.querySelectorAll(".hsv-tab").forEach(tab => {
@@ -738,7 +758,10 @@ async function pushHsvToServer() {
     ...cfgData,
     colors: {
       ...cfgData.colors,
-      [activeHsvColor]: { ranges: newRanges },
+      [activeHsvColor]: {
+        enabled: enabledCache[activeHsvColor] !== false,
+        ranges:  newRanges,
+      },
     },
   };
   try {
