@@ -222,7 +222,11 @@ async def _game_loop() -> None:
     center_tol    = float(cfg.get("center_tolerance", 0.10))
     radius_tol    = float(cfg.get("radius_tolerance", 0.10))
 
-    colors_pool = ["red", "green", "blue", "black"]
+    colors_pool = [
+        c for c in ["red", "green", "blue", "black"]
+        if cfg.get("colors", {}).get(c, {}).get("enabled", True)
+    ]
+    
     sequence = []
     for _ in range(num_stops):
         # Pick any color that differs from the last one
