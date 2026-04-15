@@ -31,6 +31,32 @@ const WS_RECONNECT_DELAY_MS = 2000;
 // Configurable here — lower = slower.
 const SLOW_RATIO = 0.35;
 
+// -- Camera stream watchdog --------------------------------------------------
+// If no MJPEG frame arrives within this duration the src is reset to reconnect.
+const CAMERA_STALL_MS = 4000;
+
+(function () {
+  const img = document.getElementById("camera-img");
+  if (!img) return;
+
+  const baseSrc = img.src;   // e.g. "/camera/stream"
+  let lastFrameAt = Date.now();
+
+  // Each decoded MJPEG frame fires the load event on the <img>
+  img.addEventListener("load", () => { lastFrameAt = Date.now(); });
+
+  // Also reset the timer on error so a brief glitch triggers a reconnect
+  img.addEventListener("error", () => { lastFrameAt = 0; });
+
+  setInterval(() => {
+    if (Date.now() - lastFrameAt > CAMERA_STALL_MS) {
+      lastFrameAt = Date.now();   // prevent rapid-fire retries
+      // Force a fresh connection by appending a cache-busting timestamp
+      img.src = baseSrc + "?t=" + Date.now();
+    }
+  }, 1000);
+})();
+
 // -- DOM refs ----------------------------------------------------------------
 const statusEl    = document.getElementById("ws-status");
 const gpStatusEl  = document.getElementById("gp-status");
